@@ -1,3 +1,6 @@
+![build](https://github.com/reiterlab/reiterlablib/workflows/build/badge.svg)
+[![codecov](https://codecov.io/gh/reiterlab/reiterlablib/branch/main/graph/badge.svg?token=3OJS5MCMSC)](https://codecov.io/gh/reiterlab/reiterlablib)
+
 # reiterlablib (rll)
 A collection of different modules providing methods for frequently used computations and visualizations used in the reiterlab. 
 See some of our developed software on our Github page [https://github.com/reiterlab]().
