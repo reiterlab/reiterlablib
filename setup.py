@@ -11,6 +11,8 @@ setup(
       packages=['rll', 'tests'],
       version=__version__,
       description='Collection of different methods frequently used in the reiterlab across projects.',
+      long_description=long_description,
+      long_description_content_type='text/markdown',
       install_requires=['numpy', 'matplotlib', ],
       setup_requires=['pytest-runner', 'flake8'],
       tests_require=['pytest', 'pytest-cov'],
