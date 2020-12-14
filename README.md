@@ -18,7 +18,8 @@ To install the latest release of rll, run ```pip install rll```
 1. Test installation with ```python -c 'import rll'``` and ```pytest tests/```
 
 ### <a name="releases"> Releases
-* rll 0.1.0 2020-12-11: Initial release of package.
+* rll v0.1.0 2020-12-11: Initial release of package.
+* rll v0.1.2 2020-12-11: Added flexibility with legend display.
 
 ### License
 These methods are licensed under the GNU General Public License, Version 3. The methods are free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 3 of the License. There is no warranty for this free software.

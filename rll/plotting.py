@@ -113,7 +113,7 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
     return bin_values, bin_borders
 
 
-def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='lower right', bbox_to_anchor=(0, 0), leg_ncol=1,
+def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_to_anchor=None, leg_ncol=1,
             xlog=False, ylog=False, n_xticks=None, sci_notation_axes=None, x_offset_text_pos=None,
             xlabel=None, ylabel=None, title=None, labels=None, colors=None, markers=None,
             linestyle='-', linewidth=1.3, alpha=1.0,
@@ -125,13 +125,14 @@ def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='lower right'
     :param xlim: tuple defining limits of x-axis
     :param ylim: tuple defining limits of y-axis
     :param legend: show legend (default True)
-    :param legend_loc: legend locations upper right 1, upper left 2, lower left 3, lower right 4, right 5,
-                        center left 6, center right 7, lower center 8, upper center 9, center 10
-    :param bbox_to_anchor:
+    :param legend_loc: legend locations best 0 (default), upper right 1, upper left 2, lower left 3, lower right 4,
+                        right 5, center left 6, center right 7, lower center 8, upper center 9, center 10
+    :param bbox_to_anchor: position where legend should be anchored;
+                           if a 4-tuple is given, then it specifies the legend as  (x pos, y pos, width, height)
     :param leg_ncol: number of columns in legend
     :param xlog: have x axis in logarithmic scale
     :param ylog: have y axis in logarithmic scale
-    :param n_xticks:
+    :param n_xticks: number of x-axis ticks
     :param sci_notation_axes:
     :param x_offset_text_pos:
     :param xlabel: label of x-axis
@@ -142,7 +143,7 @@ def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='lower right'
     :param markers: list of markers for the individual lines
     :param linestyle: -, :-, --
     :param linewidth: width of the lines
-    :param alpha:
+    :param alpha: transparency of lines between 0 and 1 (default 1)
     :param figsize: figure size given as a tuple
     :param output_fp: path to pdf output file
     :return: list of Line2D objects
@@ -200,8 +201,12 @@ def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='lower right'
     plt.tick_params(axis='both', which='major', labelsize=11)
 
     if legend and labels is not None:
-        leg = plt.legend(loc=legend_loc, facecolor='white', frameon=True, framealpha=1.0, fancybox=False,
-                         bbox_to_anchor=bbox_to_anchor, ncol=leg_ncol, prop={'size': 10})
+        if bbox_to_anchor is None:
+            leg = plt.legend(loc=legend_loc, facecolor='white', frameon=True, framealpha=1.0, fancybox=False,
+                             ncol=leg_ncol, prop={'size': 10})
+        else:
+            leg = plt.legend(loc=legend_loc, facecolor='white', frameon=True, framealpha=1.0, fancybox=False,
+                             bbox_to_anchor=bbox_to_anchor, ncol=leg_ncol, prop={'size': 10})
         leg.get_frame().set_facecolor('white')
         # set the alpha value of the legend: it will be translucent
         leg.get_frame().set_alpha(1)
