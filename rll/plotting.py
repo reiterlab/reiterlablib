@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=True, bin_weights=None,
                    n_bins=15, rwidth=0.9, xlabel=None, ylabel=None, title=None,
-                   figsize=(3.6, 2.7), align='mid', highlight_patches=None,
+                   figsize=(3.6, 2.7), align='mid', highlight_patches=None, notes=None,
                    bar_color='dimgrey', lbl_fontsize=12, tick_fontsize=11, output_fp=None):
     """
     Plot a histogram of the given data
@@ -34,6 +34,8 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
     :param figsize: figure size given as a tuple
     :param align: bin alignment
     :param highlight_patches: list of bin indexes to highlight
+    :param notes: dictionary of dictionaries where the key is a tuple of x and y position of the text label and the
+                  values specifies various other properties
     :param bar_color: color of bars
     :param lbl_fontsize: font size of axis labels
     :param tick_fontsize: font size of tick marks
@@ -100,6 +102,13 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
     ax.tick_params(axis='both', which='major', labelsize=tick_fontsize)
     ax.tick_params(axis='both', which='minor', labelsize=tick_fontsize)
 
+    if notes is not None:
+        for (xpos, ypos), lbl_dict in notes.items():
+            ax.text(xlim[0] + (xlim[1] - xlim[0]) * xpos, ylim[1] * ypos, lbl_dict['text'],
+                    bbox=lbl_dict['bbox'] if 'bbox' in lbl_dict else {'facecolor': 'white', 'edgecolor': 'none'},
+                    ha=lbl_dict['ha'] if 'ha' in lbl_dict else 'center',
+                    color=lbl_dict['color'] if 'color' in lbl_dict else bar_color,
+                    size=lbl_dict['fontsize'] if 'fontsize' in lbl_dict else tick_fontsize, transform=ax.transData)
     #     ax.text(xlim[0]+(xlim[1]-xlim[0])*0.6, ylim[1]*0.9, 'mean: {:.4g}'.format(np.mean(data)),
     #             backgroundcolor='white', ha='left', color=blue, size=11, transform=ax.transData)
     #     ax.text(xlim[0]+(xlim[1]-xlim[0])*0.6, ylim[1]*0.75, 'median: {:.4g}'.format(np.median(data)),
