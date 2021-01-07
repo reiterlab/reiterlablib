@@ -83,7 +83,7 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
         xticks = np.linspace(xlim[0], xlim[1], n_xticks)
         ax.set_xticks(xticks)
 
-    if highlight_patches is not None:
+    if highlight_patches is not None and len(highlight_patches) > 0:
         logger.info('Highlighting patches in histogram: '
                     + ', '.join(f'{i}: {bin_values[i]:.3e}' for i in highlight_patches))
         for i in highlight_patches:
