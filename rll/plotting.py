@@ -12,11 +12,14 @@ __author__ = 'Johannes REITER'
 # get logger
 logger = logging.getLogger(__name__)
 
+# default font size of x-axis and y-axis labels
+LABEL_FS = 12
+
 
 def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=True, bin_weights=None,
                    n_bins=15, rwidth=0.9, xlabel=None, ylabel=None, title=None,
                    figsize=(3.6, 2.7), align='mid', highlight_patches=None, notes=None,
-                   bar_color='dimgrey', lbl_fontsize=12, tick_fontsize=11, output_fp=None):
+                   bar_color='dimgrey', lbl_fontsize=LABEL_FS, tick_fontsize=11, output_fp=None):
     """
     Plot a histogram of the given data
     :param data: array-like data
@@ -125,7 +128,8 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
 def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_to_anchor=None, leg_ncol=1,
             xlog=False, ylog=False, n_xticks=None, sci_notation_axes=None, x_offset_text_pos=None,
             xlabel=None, ylabel=None, title=None, labels=None, colors=None, markers=None,
-            linestyle='-', linewidth=1.3, alpha=1.0,
+            xticklabels=None, yticklabels=None,
+            linestyles=None, linewidth=1.3, alpha=1.0,
             figsize=(3.6, 2.7), output_fp=None):
     """
     Create xy line plot
@@ -150,7 +154,9 @@ def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_
     :param labels: labels for the individual lines in the legend
     :param colors: list of colors for the individual lines
     :param markers: list of markers for the individual lines
-    :param linestyle: -, :-, --
+    :param xticklabels: list of xtick labels
+    :param yticklabels: list of ytick labels
+    :param linestyles: list of line styles for the individual lines (e.g., -, :-, --)
     :param linewidth: width of the lines
     :param alpha: transparency of lines between 0 and 1 (default 1)
     :param figsize: figure size given as a tuple
@@ -162,8 +168,9 @@ def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_
 
     lines = []
     for i, ys in enumerate(yss):
-        lines.append(ax.plot(xs, ys, linestyle=linestyle, lw=linewidth, alpha=alpha, clip_on=False,
+        lines.append(ax.plot(xs, ys,  lw=linewidth, alpha=alpha, clip_on=False,
                      fillstyle='none', color='dimgrey' if colors is None else colors[i],
+                     linestyle='-' if linestyles is None else linestyles[i],
                      marker=None if markers is None else markers[i],
                      label=None if labels is None else labels[i]))
 
@@ -175,6 +182,9 @@ def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_
                 ax.set_xticks(xticks, minor=True if n_xticks > 10 else False)
     else:
         xlim = ax.get_xlim()
+
+    if xticklabels is not None:
+        ax.set_xticklabels(xticklabels)
 
     # change given axis to scientific notation
     if sci_notation_axes is not None:
@@ -192,6 +202,9 @@ def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_
         ax.set_ylim(ylim)
     else:
         ylim = ax.get_ylim()
+
+    if yticklabels is not None:
+        ax.set_yticklabels(yticklabels)
 
     if xlog:
         ax.set_xscale('log')
@@ -228,7 +241,7 @@ def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_
     return lines
 
 
-def set_axis_style(ax, xlim, ylim, outward=0):
+def set_axis_style(ax, xlim=None, ylim=None, outward=0):
     """
     Remove top and right axis of box around the plot
     Set end of x-axis and y-axis according to the given limits
@@ -241,7 +254,11 @@ def set_axis_style(ax, xlim, ylim, outward=0):
 
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
+    if ylim is None:
+        ylim = ax.get_ylim()
     ax.spines['left'].set_bounds(ylim[0], ylim[1])
+    if xlim is None:
+        xlim = ax.get_xlim()
     ax.spines['bottom'].set_bounds(xlim[0], xlim[1])
 
     for line in ['left', 'bottom']:
