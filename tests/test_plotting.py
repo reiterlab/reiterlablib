@@ -7,7 +7,7 @@ __date__ = 'December 11, 2020'
 import pytest
 import numpy as np
 
-from rll.plotting import plot_histogram, plot_xy
+from rll.plotting import plot_histogram, plot_xy, plot_barplot
 
 
 @pytest.mark.parametrize('data, xlim, n_bins, density, bin_values, bin_borders',
@@ -19,6 +19,21 @@ def test_plot_histogram(data, xlim, n_bins, density, bin_values, bin_borders):
 
     np.testing.assert_array_almost_equal(bin_vals, bin_values)
     np.testing.assert_array_almost_equal(bin_bors, bin_borders)
+
+
+def test_plot_barplot():
+
+    xs = list(range(0, 5))
+    ys = list(range(0, 5))
+
+    bar_container = plot_barplot(xs, ys)
+
+    assert len(bar_container) == len(xs)
+    assert len(bar_container) == len(ys)
+    bar_heights = [rect.get_height() for rect in bar_container]
+    np.testing.assert_array_almost_equal(bar_heights, ys)
+    # np.testing.assert_array_almost_equal(lines[0][0].get_data()[0], list(range(0, 5)))
+    # np.testing.assert_array_almost_equal(lines[1][0].get_data()[1], [1]*5)
 
 
 def test_plot_xy():

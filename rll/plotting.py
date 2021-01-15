@@ -17,7 +17,7 @@ LABEL_FS = 12
 
 
 def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=True, bin_weights=None,
-                   n_bins=15, rwidth=0.9, xlabel=None, ylabel=None, title=None,
+                   n_bins=15, bin_borders=None, rwidth=0.9, xlabel=None, ylabel=None, title=None,
                    figsize=(3.6, 2.7), align='mid', highlight_patches=None, notes=None,
                    bar_color='dimgrey', lbl_fontsize=LABEL_FS, tick_fontsize=11, output_fp=None):
     """
@@ -30,12 +30,13 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
     :param density: if true return a probability density (default True)
     :param bin_weights: array-like weights to normalize each bin or None (default None)
     :param n_bins: number of bins
+    :param bin_borders: instead of the number of bins an array-like list of bin borders can be given (default None)
     :param rwidth: width of bins
     :param xlabel: label of x-axis
     :param ylabel: label of y-axis
     :param title: plot title
     :param figsize: figure size given as a tuple
-    :param align: bin alignment
+    :param align: bin alignment (default: 'mid')
     :param highlight_patches: list of bin indexes to highlight
     :param notes: dictionary of dictionaries where the key is a tuple of x and y position of the text label and the
                   values specifies various other properties
@@ -60,16 +61,19 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
     else:
         weights = None
 
-    bins = np.linspace(int(xlim[0]), int(xlim[1]), n_bins + 1)
+    if n_bins is not None:
+        bin_borders = np.linspace(int(xlim[0]), int(xlim[1]), n_bins + 1)
+    elif bin_borders is None:
+        logger.warning('Neither a desired number of bins nor a list of bin borders was given.')
 
     if bin_weights is not None:
         # because all but the las (righthand-most) bin is half-open,
         # we need to manually exclude values exactly at the right edge
-        counts, bins = np.histogram(data[data < xlim[1]], bins=bins)
+        counts, bins = np.histogram(data[data < xlim[1]], bins=bin_borders)
         data = bins[:-1]
         weights = counts * bin_weights
 
-    bin_values, bin_borders, patches = plt.hist(data, bins=bins, align=align, rwidth=rwidth,
+    bin_values, bin_borders, patches = plt.hist(data, bins=bin_borders, align=align, rwidth=rwidth,
                                                 weights=weights, color=bar_color, alpha=alpha)
 
     logger.debug('Bin values and borders: '
@@ -105,24 +109,96 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
     ax.tick_params(axis='both', which='major', labelsize=tick_fontsize)
     ax.tick_params(axis='both', which='minor', labelsize=tick_fontsize)
 
+    # add provided text notes at the given positions to the plot
     if notes is not None:
-        for (xpos, ypos), lbl_dict in notes.items():
-            ax.text(xlim[0] + (xlim[1] - xlim[0]) * xpos, ylim[1] * ypos, lbl_dict['text'],
-                    bbox=lbl_dict['bbox'] if 'bbox' in lbl_dict else {'facecolor': 'white', 'edgecolor': 'none'},
-                    ha=lbl_dict['ha'] if 'ha' in lbl_dict else 'center',
-                    color=lbl_dict['color'] if 'color' in lbl_dict else bar_color,
-                    size=lbl_dict['fontsize'] if 'fontsize' in lbl_dict else tick_fontsize, transform=ax.transData)
-    #     ax.text(xlim[0]+(xlim[1]-xlim[0])*0.6, ylim[1]*0.9, 'mean: {:.4g}'.format(np.mean(data)),
-    #             backgroundcolor='white', ha='left', color=blue, size=11, transform=ax.transData)
-    #     ax.text(xlim[0]+(xlim[1]-xlim[0])*0.6, ylim[1]*0.75, 'median: {:.4g}'.format(np.median(data)),
-    #             backgroundcolor='white', ha='left', color=blue, size=11, transform=ax.transData)
+        _add_notes(notes, ax, txt_color=bar_color, txt_fontsize=tick_fontsize)
 
     set_axis_style(ax, xlim, ylim, outward=3)
 
     if output_fp is not None:
         plt.savefig(output_fp, dpi=150, bbox_inches='tight', transparent=True)
+        logger.info(f'Created histogram plot: {output_fp}')
 
     return bin_values, bin_borders
+
+
+def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_yticks=None, xticks=None, align='center',
+                 xlabel=None, ylabel=None, title=None, figsize=(3.2, 2.6),
+                 bar_color='dimgrey', lbl_fontsize=LABEL_FS, tick_fontsize=11, notes=None, output_fp=None):
+    """
+
+    :param xs: array-like list of x positions
+    :param ys: array-like list of y positions
+    :param width: with of bars
+    :param xlim: tuple defining limits of x-axis
+    :param ylim: tuple defining limits of y-axis
+    :param n_xticks: number of tick marks on the x-axis (mutually-exclusive with xticks)
+    :param n_yticks: number of tick marks on the y-axis
+    :param xticks: array-like list of tick marks (mutually-exclusive with n_xticks)
+    :param align: bin alignment (default: 'center')
+    :param xlabel: label of x-axis
+    :param ylabel: label of y-axis
+    :param title: plot title
+    :param figsize: figure size given as a tuple
+    :param bar_color: color of bars
+    :param lbl_fontsize: font size of axis labels
+    :param tick_fontsize: font size of tick marks
+    :param notes: dictionary of dictionaries where the key is a tuple of x and y position of the text label and the
+                  values specifies various other properties
+    :param output_fp: path to pdf output file
+    :return: bar container
+    """
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    bar_container = plt.bar(xs, ys, width=width, align=align, color=bar_color)
+
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    else:
+        xlim = ax.get_xlim()
+
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    else:
+        ylim = ax.get_ylim()
+
+    if n_xticks is not None and xticks is None:
+        xticks = np.linspace(xlim[0], xlim[1], n_xticks)
+        ax.set_xticks(xticks)
+    elif n_xticks is None and xticks is not None:
+        ax.set_xticks(xticks)
+    elif n_xticks is not None and xticks is not None:
+        logger.warning('Arguments n_xticks and xticks are mutually exclusive!')
+
+    if n_yticks is not None:
+        yticks = np.linspace(ylim[0], ylim[1], n_yticks)
+        ax.set_yticks(yticks)
+
+    if title is not None:
+        ax.set_title(title)
+
+    if xlabel is not None:
+        ax.set_xlabel(xlabel, fontsize=lbl_fontsize)
+
+    if ylabel is not None:
+        ax.set_ylabel(ylabel, fontsize=lbl_fontsize)
+
+    set_axis_style(ax, xlim, ylim, outward=5)
+
+    # change the fontsize of ticks labels
+    ax.tick_params(axis='both', which='major', labelsize=tick_fontsize)
+    ax.tick_params(axis='both', which='minor', labelsize=tick_fontsize)
+
+    # add provided text notes at the given positions to the plot
+    if notes is not None:
+        _add_notes(notes, ax, txt_color=bar_color, txt_fontsize=tick_fontsize)
+
+    if output_fp is not None:
+        plt.savefig(output_fp, dpi=150, bbox_inches='tight', transparent=True)
+        logger.info(f'Created bar plot: {output_fp}')
+
+    return bar_container
 
 
 def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_to_anchor=None, leg_ncol=1,
@@ -133,8 +209,8 @@ def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_
             figsize=(3.6, 2.7), output_fp=None):
     """
     Create xy line plot
-    :param xs: list of x positions
-    :param yss: list of list of y positions
+    :param xs: array-like list of x positions
+    :param yss: list of array-like list of y positions
     :param xlim: tuple defining limits of x-axis
     :param ylim: tuple defining limits of y-axis
     :param legend: show legend (default True)
@@ -263,3 +339,21 @@ def set_axis_style(ax, xlim=None, ylim=None, outward=0):
 
     for line in ['left', 'bottom']:
         ax.spines[line].set_position(('outward', outward))
+
+
+def _add_notes(notes, ax, txt_color, txt_fontsize):
+    """
+    Add provided text notes at the given positions to the plot
+    :param notes: dictionary of dictionaries where the key is a tuple of x and y position of the text label and the
+                  values specifies various other properties
+    :param ax: plot axes
+    :param txt_color: color of text
+    :param txt_fontsize: text fontsize
+    """
+    for (xpos, ypos), lbl_dict in notes.items():
+        ax.text(xpos, ypos, lbl_dict['text'],
+                bbox=lbl_dict['bbox'] if 'bbox' in lbl_dict else {'facecolor': 'white', 'edgecolor': 'none'},
+                ha=lbl_dict['ha'] if 'ha' in lbl_dict else 'center',
+                color=lbl_dict['color'] if 'color' in lbl_dict else txt_color,
+                size=lbl_dict['fontsize'] if 'fontsize' in lbl_dict else txt_fontsize,
+                transform=ax.transData if 'transform' in lbl_dict else ax.transAxes)
