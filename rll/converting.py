@@ -1,5 +1,5 @@
 #!/usr/bin/python
-"""Converting different measures of tumor sizes"""
+"""Converting different measures of tumor sizes and tumor growth"""
 
 import math
 
@@ -34,3 +34,21 @@ def cells_diameter(n_cells, cells_per_cm3=1e9):
     :return: spherical diameter in centimeters
     """
     return (6 * n_cells/cells_per_cm3 / math.pi) ** (1.0/3)
+
+
+def get_growth_rate(tvdt):
+    """
+    Converts the tumor volume doubling time in days to an exponential growth rate per day
+    :param tvdt: tumor volume doubling time in days
+    :return: exponential growth rate per day
+    """
+    return math.log(2) / tvdt
+
+
+def get_tvdt(r):
+    """
+    Converts a daily growth rate to the tumor volume doubling time in days
+    :param r: daily growth rate
+    :return: tumor volume doubling time in days
+    """
+    return math.log(2) / r

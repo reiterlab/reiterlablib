@@ -6,7 +6,7 @@ __date__ = 'January 4, 2021'
 
 import pytest
 
-from rll.tumorsize import *
+from rll.converting import *
 
 
 @pytest.mark.parametrize('d_cm, volume',

@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 # default font size of x-axis and y-axis labels
 LABEL_FS = 12
 
+COLOR_PAL = ['firebrick', 'royalblue']
+
 
 def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=True, bin_weights=None,
                    n_bins=15, bin_borders=None, rwidth=0.9, xlabel=None, ylabel=None, title=None,
