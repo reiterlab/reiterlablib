@@ -206,9 +206,8 @@ def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_ytick
 def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_to_anchor=None, leg_ncol=1,
             xlog=False, ylog=False, n_xticks=None, sci_notation_axes=None, x_offset_text_pos=None,
             xlabel=None, ylabel=None, title=None, labels=None, colors=None, markers=None,
-            xticklabels=None, yticklabels=None,
-            linestyles=None, linewidth=1.3, alpha=1.0,
-            figsize=(3.6, 2.7), output_fp=None):
+            xticklabels=None, yticklabels=None, linestyles=None, linewidth=1.3, alpha=1.0,
+            figsize=(3.6, 2.7), notes=None, output_fp=None):
     """
     Create xy line plot
     :param xs: array-like list of x positions
@@ -238,6 +237,8 @@ def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_
     :param linewidth: width of the lines
     :param alpha: transparency of lines between 0 and 1 (default 1)
     :param figsize: figure size given as a tuple
+    :param notes: dictionary of dictionaries where the key is a tuple of x and y position of the text label and the
+                  values specifies various other properties
     :param output_fp: path to pdf output file
     :return: list of Line2D objects
     """
@@ -312,6 +313,10 @@ def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_
         leg.get_frame().set_alpha(1)
         leg.get_frame().set_linewidth(0.0)
 
+    # add provided text notes at the given positions to the plot
+    if notes is not None:
+        _add_notes(notes, ax)
+
     if output_fp is not None:
         plt.savefig(output_fp, dpi=150, bbox_inches='tight', transparent=True)
         logger.info(f'Created xy line plot: {output_fp}')
@@ -343,7 +348,7 @@ def set_axis_style(ax, xlim=None, ylim=None, outward=0):
         ax.spines[line].set_position(('outward', outward))
 
 
-def _add_notes(notes, ax, txt_color, txt_fontsize):
+def _add_notes(notes, ax, txt_color='dimgrey', txt_fontsize=10):
     """
     Add provided text notes at the given positions to the plot
     :param notes: dictionary of dictionaries where the key is a tuple of x and y position of the text label and the

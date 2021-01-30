@@ -36,7 +36,7 @@ def cells_diameter(n_cells, cells_per_cm3=1e9):
     return (6 * n_cells/cells_per_cm3 / math.pi) ** (1.0/3)
 
 
-def get_growth_rate(tvdt):
+def convert_tvdt_grrate(tvdt):
     """
     Converts the tumor volume doubling time in days to an exponential growth rate per day
     :param tvdt: tumor volume doubling time in days
@@ -45,7 +45,7 @@ def get_growth_rate(tvdt):
     return math.log(2) / tvdt
 
 
-def get_tvdt(r):
+def convert_grrate_tvdt(r):
     """
     Converts a daily growth rate to the tumor volume doubling time in days
     :param r: daily growth rate

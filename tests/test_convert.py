@@ -6,7 +6,7 @@ __date__ = 'January 4, 2021'
 
 import pytest
 
-from rll.converting import *
+from rll.convert import *
 
 
 @pytest.mark.parametrize('d_cm, volume',
