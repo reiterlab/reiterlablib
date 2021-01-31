@@ -15,13 +15,16 @@ logger = logging.getLogger(__name__)
 # default font size of x-axis and y-axis labels
 LABEL_FS = 12
 
+# default font size of tick mark labels
+TICK_FS = 11
+
 COLOR_PAL = ['firebrick', 'royalblue']
 
 
 def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=True, bin_weights=None,
                    n_bins=15, bin_borders=None, rwidth=0.9, xlabel=None, ylabel=None, title=None,
                    figsize=(3.6, 2.7), align='mid', highlight_patches=None, notes=None,
-                   bar_color='dimgrey', lbl_fontsize=LABEL_FS, tick_fontsize=11, output_fp=None):
+                   bar_color='dimgrey', lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS, output_fp=None):
     """
     Plot a histogram of the given data
     :param data: array-like data
@@ -126,7 +129,7 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
 
 def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_yticks=None, xticks=None, align='center',
                  xlabel=None, ylabel=None, title=None, figsize=(3.2, 2.6),
-                 bar_color='dimgrey', lbl_fontsize=LABEL_FS, tick_fontsize=11, notes=None, output_fp=None):
+                 bar_color='dimgrey', lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS, notes=None, output_fp=None):
     """
 
     :param xs: array-like list of x positions
@@ -204,7 +207,8 @@ def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_ytick
 
 
 def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_to_anchor=None, leg_ncol=1,
-            xlog=False, ylog=False, n_xticks=None, sci_notation_axes=None, x_offset_text_pos=None,
+            xlog=False, ylog=False, n_xticks=None, sci_notation_axes=None,
+            x_offset_text_pos=None, y_offset_text_pos=None,
             xlabel=None, ylabel=None, title=None, labels=None, colors=None, markers=None,
             xticklabels=None, yticklabels=None, linestyles=None, linewidth=1.3, alpha=1.0,
             figsize=(3.6, 2.7), notes=None, output_fp=None):
@@ -223,8 +227,9 @@ def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_
     :param xlog: have x axis in logarithmic scale
     :param ylog: have y axis in logarithmic scale
     :param n_xticks: number of x-axis ticks
-    :param sci_notation_axes:
-    :param x_offset_text_pos:
+    :param sci_notation_axes: list of axes where scientific notation is enforced, e.g. ['x', 'y']
+    :param x_offset_text_pos: change position of the x-axis exponent scientific notation label, e.g. (1.03, -0.05)
+    :param y_offset_text_pos: change position of the y-axis exponent scientific notation label, e.g. (0.03, 1.05)
     :param xlabel: label of x-axis
     :param ylabel: label of y-axis
     :param title: plot title
@@ -275,7 +280,14 @@ def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_
         plt.draw()
         x_offset_text = ax.xaxis.get_offset_text().get_text()
         ax.xaxis.get_offset_text().set_visible(False)
-        ax.text(x_offset_text_pos[0], x_offset_text_pos[1], x_offset_text, fontsize=12)
+        ax.text(x_offset_text_pos[0], x_offset_text_pos[1], x_offset_text, fontsize=TICK_FS, transform=ax.transAxes)
+
+    if y_offset_text_pos is not None:
+        # need to update the plot to be able to get the offset text
+        plt.draw()
+        y_offset_text = ax.yaxis.get_offset_text().get_text()
+        ax.yaxis.get_offset_text().set_visible(False)
+        ax.text(y_offset_text_pos[0], y_offset_text_pos[1], y_offset_text, fontsize=TICK_FS, transform=ax.transAxes)
 
     if ylim is not None:
         ax.set_ylim(ylim)
