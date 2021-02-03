@@ -2,7 +2,6 @@
 """Common plotting methods"""
 
 import logging
-from collections.abc import Sequence
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -255,7 +254,7 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
 
     lines = []
     for i, ys in enumerate(yss):
-        if isinstance(xss[0], Sequence):
+        if hasattr(xss[0], '__len__'):
             xs = xss[i]
         else:
             xs = xss
