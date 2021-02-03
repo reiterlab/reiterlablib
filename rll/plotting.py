@@ -2,6 +2,7 @@
 """Common plotting methods"""
 
 import logging
+from collections.abc import Sequence
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -20,10 +21,12 @@ TICK_FS = 11
 
 COLOR_PAL = ['firebrick', 'royalblue']
 
+FIG_SIZE = (3.0, 2.6)
+
 
 def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=True, bin_weights=None,
                    n_bins=15, bin_borders=None, rwidth=0.9, xlabel=None, ylabel=None, title=None,
-                   figsize=(3.6, 2.7), align='mid', highlight_patches=None, notes=None,
+                   figsize=FIG_SIZE, align='mid', highlight_patches=None, notes=None,
                    bar_color='dimgrey', lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS, output_fp=None):
     """
     Plot a histogram of the given data
@@ -128,7 +131,7 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
 
 
 def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_yticks=None, xticks=None, align='center',
-                 xlabel=None, ylabel=None, title=None, figsize=(3.2, 2.6),
+                 xlabel=None, ylabel=None, title=None, figsize=FIG_SIZE,
                  bar_color='dimgrey', lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS, notes=None, output_fp=None):
     """
 
@@ -206,15 +209,15 @@ def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_ytick
     return bar_container
 
 
-def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_to_anchor=None, leg_ncol=1,
+def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_to_anchor=None, leg_ncol=1,
             xlog=False, ylog=False, n_xticks=None, sci_notation_axes=None,
             x_offset_text_pos=None, y_offset_text_pos=None,
             xlabel=None, ylabel=None, title=None, labels=None, colors=None, markers=None,
             xticklabels=None, yticklabels=None, linestyles=None, linewidth=1.3, alpha=1.0,
-            figsize=(3.6, 2.7), notes=None, output_fp=None):
+            figsize=FIG_SIZE, notes=None, output_fp=None):
     """
     Create xy line plot
-    :param xs: array-like list of x positions
+    :param xss: array-like list of x positions or list of array-lie list
     :param yss: list of array-like list of y positions
     :param xlim: tuple defining limits of x-axis
     :param ylim: tuple defining limits of y-axis
@@ -252,11 +255,16 @@ def plot_xy(xs, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_
 
     lines = []
     for i, ys in enumerate(yss):
-        lines.append(ax.plot(xs, ys,  lw=linewidth, alpha=alpha, clip_on=False,
-                     fillstyle='none', color='dimgrey' if colors is None else colors[i],
-                     linestyle='-' if linestyles is None else linestyles[i],
-                     marker=None if markers is None else markers[i],
-                     label=None if labels is None else labels[i]))
+        if isinstance(xss, Sequence):
+            xs = xss[i]
+        else:
+            xs = xss
+
+        lines.append(ax.plot(xs, ys, lw=linewidth, alpha=alpha, clip_on=False,
+                             fillstyle='none', color='dimgrey' if colors is None else colors[i],
+                             linestyle='-' if linestyles is None else linestyles[i],
+                             marker=None if markers is None else markers[i],
+                             label=None if labels is None else labels[i]))
 
     if xlim is not None:
         ax.set_xlim(xlim)
