@@ -255,7 +255,7 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
 
     lines = []
     for i, ys in enumerate(yss):
-        if isinstance(xss, Sequence):
+        if isinstance(xss[0], Sequence):
             xs = xss[i]
         else:
             xs = xss
