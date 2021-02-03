@@ -211,7 +211,7 @@ def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_ytick
 
 def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_to_anchor=None, leg_ncol=1,
             xlog=False, ylog=False, n_xticks=None, sci_notation_axes=None,
-            x_offset_text_pos=None, y_offset_text_pos=None,
+            x_offset_text_pos=None, y_offset_text_pos=None, lbl_fontsize=LABEL_FS,
             xlabel=None, ylabel=None, title=None, labels=None, colors=None, markers=None,
             xticklabels=None, yticklabels=None, linestyles=None, linewidth=1.3, alpha=1.0,
             figsize=FIG_SIZE, notes=None, output_fp=None):
@@ -311,11 +311,11 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
         ax.set_yscale('log')
 
     if xlabel is not None:
-        ax.set_xlabel(xlabel, fontsize=12)
+        ax.set_xlabel(xlabel, fontsize=lbl_fontsize)
     if ylabel is not None:
-        ax.set_ylabel(ylabel, fontsize=12)
+        ax.set_ylabel(ylabel, fontsize=lbl_fontsize)
     if title is not None:
-        ax.set_title(title, fontsize=12)
+        ax.set_title(title, fontsize=lbl_fontsize)
 
     set_axis_style(ax, xlim, ylim, outward=5)
 
