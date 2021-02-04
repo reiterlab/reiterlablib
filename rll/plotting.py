@@ -377,9 +377,10 @@ def _add_notes(notes, ax, txt_color='dimgrey', txt_fontsize=10):
     :param txt_fontsize: text fontsize
     """
     for (xpos, ypos), lbl_dict in notes.items():
-        ax.text(xpos, ypos, lbl_dict['text'],
-                bbox=lbl_dict['bbox'] if 'bbox' in lbl_dict else {'facecolor': 'white', 'edgecolor': 'none'},
-                ha=lbl_dict['ha'] if 'ha' in lbl_dict else 'center',
-                color=lbl_dict['color'] if 'color' in lbl_dict else txt_color,
-                size=lbl_dict['fontsize'] if 'fontsize' in lbl_dict else txt_fontsize,
-                transform=ax.transData if 'transform' in lbl_dict else ax.transAxes)
+        ax.text(
+            xpos, ypos, lbl_dict['text'],
+            bbox=lbl_dict['bbox'] if 'bbox' in lbl_dict else {'facecolor': 'none', 'edgecolor': 'none', 'alpha': 1.0},
+            ha=lbl_dict['ha'] if 'ha' in lbl_dict else 'center',
+            color=lbl_dict['color'] if 'color' in lbl_dict else txt_color,
+            size=lbl_dict['fontsize'] if 'fontsize' in lbl_dict else txt_fontsize,
+            transform=ax.transData if 'transform' in lbl_dict else ax.transAxes)
