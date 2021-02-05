@@ -22,7 +22,7 @@ To install the latest release of rll, run ```pip install rll```
 * rll v0.1.2 2020-12-11: Added flexibility with legend display.
 * rll v0.1.3 2021-01-04: Added functions to convert different measures of tumor sizes.
 * rll v0.1.4 2021-02-04: Adding custom text labels to histograms. Added barplots.
-* rll v0.1.5 2021-@@-@@: Added some additional plotting options to barplots and xyplots.
+* rll v0.1.5 2021-@@-@@: Added some additional plotting options to barplots and xyplots. Added options for marker sizes.
 
 ### License
 These methods are licensed under the GNU General Public License, Version 3. The methods are free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 3 of the License. There is no warranty for this free software.

@@ -229,7 +229,7 @@ def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_ytick
 def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_to_anchor=None, leg_ncol=1,
             xlog=False, ylog=False, n_xticks=None, sci_notation_axes=None,
             x_offset_text_pos=None, y_offset_text_pos=None, lbl_fontsize=LABEL_FS,
-            xlabel=None, ylabel=None, title=None, labels=None, colors=None, markers=None,
+            xlabel=None, ylabel=None, title=None, labels=None, colors=None, markers=None, markersizes=None,
             xticklabels=None, yticklabels=None, linestyles=None, linewidths=None, alpha=1.0,
             figsize=FIG_SIZE, notes=None, output_fp=None):
     """
@@ -257,6 +257,7 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
     :param labels: labels for the individual lines in the legend
     :param colors: list of colors for the individual lines
     :param markers: list of markers for the individual lines
+    :param markersizes: list of marker sizes
     :param xticklabels: list of xtick labels
     :param yticklabels: list of ytick labels
     :param linestyles: list of line styles for the individual lines (e.g., -, :-, --)
@@ -283,6 +284,7 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
                              lw=1.3 if linewidths is None else linewidths[i],
                              linestyle='-' if linestyles is None else linestyles[i],
                              marker=None if markers is None else markers[i],
+                             markersize=10 if markersizes is None else markersizes[i],
                              label=None if labels is None else labels[i]))
 
     if xlim is not None:
