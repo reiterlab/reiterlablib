@@ -130,10 +130,12 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
 
 
 def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_yticks=None, xticks=None, align='center',
-                 xlabel=None, ylabel=None, title=None, figsize=FIG_SIZE,
-                 bar_color='dimgrey', lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS, notes=None, output_fp=None):
+                 xlog=False, ylog=False, xlabel=None, ylabel=None, title=None, figsize=FIG_SIZE,
+                 barcolor='dimgrey', lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS, notes=None,
+                 xs_line=None, ys_line=None, linewidth=1.0, linecolor='firebrick', linestyle='-',
+                 output_fp=None):
     """
-
+    Create a bar plot
     :param xs: array-like list of x positions
     :param ys: array-like list of y positions
     :param width: with of bars
@@ -143,22 +145,33 @@ def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_ytick
     :param n_yticks: number of tick marks on the y-axis
     :param xticks: array-like list of tick marks (mutually-exclusive with n_xticks)
     :param align: bin alignment (default: 'center')
+    :param xlog: have x axis in logarithmic scale
+    :param ylog: have y axis in logarithmic scale
     :param xlabel: label of x-axis
     :param ylabel: label of y-axis
     :param title: plot title
     :param figsize: figure size given as a tuple
-    :param bar_color: color of bars
+    :param barcolor: color of bars
     :param lbl_fontsize: font size of axis labels
     :param tick_fontsize: font size of tick marks
     :param notes: dictionary of dictionaries where the key is a tuple of x and y position of the text label and the
                   values specifies various other properties
+    :param xs_line: array-like list of x-values
+    :param ys_line: array-like list of y-values
+    :param linewidth: line width
+    :param linecolor: color of line of optional xy-line plot
+    :param linestyle: style of line of optional xy-line plot
     :param output_fp: path to pdf output file
     :return: bar container
     """
 
     fig, ax = plt.subplots(figsize=figsize)
 
-    bar_container = plt.bar(xs, ys, width=width, align=align, color=bar_color)
+    bar_container = plt.bar(xs, ys, width=width, align=align, color=barcolor, clip_on=False)
+
+    if xs_line is not None and ys_line is not None:
+        ax.plot(xs_line, ys_line, lw=linewidth, clip_on=False,  # alpha=alpha,
+                fillstyle='none', color=linecolor, linestyle=linestyle)
 
     if xlim is not None:
         ax.set_xlim(xlim)
@@ -182,6 +195,11 @@ def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_ytick
         yticks = np.linspace(ylim[0], ylim[1], n_yticks)
         ax.set_yticks(yticks)
 
+    if xlog:
+        ax.set_xscale('log')
+    if ylog:
+        ax.set_yscale('log')
+
     if title is not None:
         ax.set_title(title)
 
@@ -199,7 +217,7 @@ def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_ytick
 
     # add provided text notes at the given positions to the plot
     if notes is not None:
-        _add_notes(notes, ax, txt_color=bar_color, txt_fontsize=tick_fontsize)
+        _add_notes(notes, ax, txt_color=barcolor, txt_fontsize=tick_fontsize)
 
     if output_fp is not None:
         plt.savefig(output_fp, dpi=150, bbox_inches='tight', transparent=True)
@@ -212,11 +230,11 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
             xlog=False, ylog=False, n_xticks=None, sci_notation_axes=None,
             x_offset_text_pos=None, y_offset_text_pos=None, lbl_fontsize=LABEL_FS,
             xlabel=None, ylabel=None, title=None, labels=None, colors=None, markers=None,
-            xticklabels=None, yticklabels=None, linestyles=None, linewidth=1.3, alpha=1.0,
+            xticklabels=None, yticklabels=None, linestyles=None, linewidths=None, alpha=1.0,
             figsize=FIG_SIZE, notes=None, output_fp=None):
     """
     Create xy line plot
-    :param xss: array-like list of x positions or list of array-lie list
+    :param xss: array-like list of x positions or list of array-like list
     :param yss: list of array-like list of y positions
     :param xlim: tuple defining limits of x-axis
     :param ylim: tuple defining limits of y-axis
@@ -232,6 +250,7 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
     :param sci_notation_axes: list of axes where scientific notation is enforced, e.g. ['x', 'y']
     :param x_offset_text_pos: change position of the x-axis exponent scientific notation label, e.g. (1.03, -0.05)
     :param y_offset_text_pos: change position of the y-axis exponent scientific notation label, e.g. (0.03, 1.05)
+    :param lbl_fontsize: label font size
     :param xlabel: label of x-axis
     :param ylabel: label of y-axis
     :param title: plot title
@@ -241,7 +260,7 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
     :param xticklabels: list of xtick labels
     :param yticklabels: list of ytick labels
     :param linestyles: list of line styles for the individual lines (e.g., -, :-, --)
-    :param linewidth: width of the lines
+    :param linewidths: list of widths of the lines
     :param alpha: transparency of lines between 0 and 1 (default 1)
     :param figsize: figure size given as a tuple
     :param notes: dictionary of dictionaries where the key is a tuple of x and y position of the text label and the
@@ -259,8 +278,9 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
         else:
             xs = xss
 
-        lines.append(ax.plot(xs, ys, lw=linewidth, alpha=alpha, clip_on=False,
+        lines.append(ax.plot(xs, ys, alpha=alpha, clip_on=False,
                              fillstyle='none', color='dimgrey' if colors is None else colors[i],
+                             lw=1.3 if linewidths is None else linewidths[i],
                              linestyle='-' if linestyles is None else linestyles[i],
                              marker=None if markers is None else markers[i],
                              label=None if labels is None else labels[i]))
