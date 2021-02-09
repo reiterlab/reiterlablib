@@ -2,6 +2,7 @@
 """Common plotting methods"""
 
 import logging
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -227,11 +228,11 @@ def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_ytick
 
 
 def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_to_anchor=None, leg_ncol=1,
-            xlog=False, ylog=False, n_xticks=None, sci_notation_axes=None,
+            xlog=False, ylog=False, n_xticks=None, n_yticks=None, sci_notation_axes=None, clip_on=False,
             x_offset_text_pos=None, y_offset_text_pos=None, lbl_fontsize=LABEL_FS,
             xlabel=None, ylabel=None, title=None, labels=None, colors=None, markers=None, markersizes=None,
             xticklabels=None, yticklabels=None, linestyles=None, linewidths=None, alpha=1.0,
-            figsize=FIG_SIZE, notes=None, output_fp=None):
+            figsize=FIG_SIZE, notes=None, output_fp=None, ax=None):
     """
     Create xy line plot
     :param xss: array-like list of x positions or list of array-like list
@@ -247,7 +248,9 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
     :param xlog: have x axis in logarithmic scale
     :param ylog: have y axis in logarithmic scale
     :param n_xticks: number of x-axis ticks
+    :param n_yticks: number of tick marks on the y-axis
     :param sci_notation_axes: list of axes where scientific notation is enforced, e.g. ['x', 'y']
+    :param clip_on: should lines be visible outside of the axes (default: False)
     :param x_offset_text_pos: change position of the x-axis exponent scientific notation label, e.g. (1.03, -0.05)
     :param y_offset_text_pos: change position of the y-axis exponent scientific notation label, e.g. (0.03, 1.05)
     :param lbl_fontsize: label font size
@@ -267,10 +270,12 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
     :param notes: dictionary of dictionaries where the key is a tuple of x and y position of the text label and the
                   values specifies various other properties
     :param output_fp: path to pdf output file
+    :param ax: pass an axes object of an already created figure
     :return: list of Line2D objects
     """
 
-    fig, ax = plt.subplots(figsize=figsize)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
 
     lines = []
     for i, ys in enumerate(yss):
@@ -279,13 +284,18 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
         else:
             xs = xss
 
-        lines.append(ax.plot(xs, ys, alpha=alpha, clip_on=False,
+        lines.append(ax.plot(xs, ys, alpha=alpha, clip_on=clip_on,
                              fillstyle='none', color='dimgrey' if colors is None else colors[i],
                              lw=1.3 if linewidths is None else linewidths[i],
                              linestyle='-' if linestyles is None else linestyles[i],
                              marker=None if markers is None else markers[i],
                              markersize=10 if markersizes is None else markersizes[i],
                              label=None if labels is None else labels[i]))
+
+    if xlog:
+        ax.set_xscale('log')
+    if ylog:
+        ax.set_yscale('log')
 
     if xlim is not None:
         ax.set_xlim(xlim)
@@ -320,16 +330,17 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
 
     if ylim is not None:
         ax.set_ylim(ylim)
+        if n_yticks is not None:
+            if not ylog:
+                yticks = np.linspace(ylim[0], ylim[1], n_yticks)
+            else:
+                yticks = np.logspace(math.log10(ylim[0]), math.log10(ylim[1]), n_yticks)
+            ax.set_yticks(yticks, minor=True if n_yticks > 10 else False)
     else:
         ylim = ax.get_ylim()
 
     if yticklabels is not None:
         ax.set_yticklabels(yticklabels)
-
-    if xlog:
-        ax.set_xscale('log')
-    if ylog:
-        ax.set_yscale('log')
 
     if xlabel is not None:
         ax.set_xlabel(xlabel, fontsize=lbl_fontsize)
