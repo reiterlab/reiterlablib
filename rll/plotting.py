@@ -19,18 +19,18 @@ LABEL_FS = 12
 # default font size of tick mark labels
 TICK_FS = 11
 
-COLOR_PAL = ['firebrick', 'royalblue']
+COLOR_PAL = ['dimgrey', 'firebrick', 'royalblue']
 
 FIG_SIZE = (3.0, 2.6)
 
 
 def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=True, bin_weights=None,
                    n_bins=15, bin_borders=None, rwidth=0.9, xlabel=None, ylabel=None, title=None,
-                   figsize=FIG_SIZE, align='mid', highlight_patches=None, notes=None,
+                   figsize=FIG_SIZE, align='mid', highlight_patches=None, notes=None, clip_on=False,
                    bar_color='dimgrey', lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS, output_fp=None):
     """
     Plot a histogram of the given data
-    :param data: array-like data
+    :param data: array-like data (or array of array-like data)
     :param xlim: tuple defining limits of x-axis
     :param ylim: tuple defining limits of y-axis
     :param n_xticks: number of tick marks on the x-axis
@@ -48,7 +48,8 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
     :param highlight_patches: list of bin indexes to highlight
     :param notes: dictionary of dictionaries where the key is a tuple of x and y position of the text label and the
                   values specifies various other properties
-    :param bar_color: color of bars
+    :param clip_on: should lines be visible outside of the axes (default: False)
+    :param bar_color: color of bars (or array)
     :param lbl_fontsize: font size of axis labels
     :param tick_fontsize: font size of tick marks
     :param output_fp: path to pdf output file
@@ -56,6 +57,12 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
     """
 
     fig, ax = plt.subplots(figsize=figsize)
+
+    # are there multiple datasets?
+    if not hasattr(data, 'values') and hasattr(data[0], '__len__'):
+        multiple = len(data)
+    else:
+        multiple = 0
 
     if n_yticks is not None:
         if ylim is None:
@@ -65,7 +72,12 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
 
     alpha = 1.0
     if density:
-        weights = np.ones_like(data) / float(len(data))
+        if multiple > 0:
+            weights = list()
+            for i in range(multiple):
+                weights.append(np.ones_like(data[i]) / float(len(data[i])))
+        else:
+            weights = np.ones_like(data) / float(len(data))
     else:
         weights = None
 
@@ -81,12 +93,17 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
         data = bins[:-1]
         weights = counts * bin_weights
 
-    bin_values, bin_borders, patches = plt.hist(data, bins=bin_borders, align=align, rwidth=rwidth,
+    bin_values, bin_borders, patches = plt.hist(data, bins=bin_borders, align=align, rwidth=rwidth, clip_on=clip_on,
                                                 weights=weights, color=bar_color, alpha=alpha)
-
-    logger.debug('Bin values and borders: '
-                 + ', '.join(f'[{start:.2e},{end:.2e}]: {val:.1e}'
-                             for start, end, val in zip(bin_borders[:-1], bin_borders[1:], bin_values)))
+    if multiple == 0:
+        logger.debug('Bin values and borders: '
+                     + ', '.join(f'[{start:.2e},{end:.2e}]: {val:.1e}'
+                                 for start, end, val in zip(bin_borders[:-1], bin_borders[1:], bin_values)))
+    else:
+        for values in bin_values:
+            logger.debug('Bin values and borders: '
+                         + ', '.join(f'[{start:.2e},{end:.2e}]: {val:.1e}'
+                                     for start, end, val in zip(bin_borders[:-1], bin_borders[1:], values)))
 
     if ylim is not None:
         ax.set_ylim(ylim)
@@ -132,9 +149,9 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
 
 def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_yticks=None, xticks=None, align='center',
                  xlog=False, ylog=False, xlabel=None, ylabel=None, title=None, figsize=FIG_SIZE,
-                 barcolor='dimgrey', lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS, notes=None,
+                 bar_color='dimgrey', lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS, notes=None,
                  xs_line=None, ys_line=None, linewidth=1.0, linecolor='firebrick', linestyle='-',
-                 output_fp=None):
+                 ax=None, output_fp=None):
     """
     Create a bar plot
     :param xs: array-like list of x positions
@@ -152,7 +169,7 @@ def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_ytick
     :param ylabel: label of y-axis
     :param title: plot title
     :param figsize: figure size given as a tuple
-    :param barcolor: color of bars
+    :param bar_color: color of bars
     :param lbl_fontsize: font size of axis labels
     :param tick_fontsize: font size of tick marks
     :param notes: dictionary of dictionaries where the key is a tuple of x and y position of the text label and the
@@ -162,13 +179,15 @@ def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_ytick
     :param linewidth: line width
     :param linecolor: color of line of optional xy-line plot
     :param linestyle: style of line of optional xy-line plot
+    :param ax: axes object of an already created figure
     :param output_fp: path to pdf output file
     :return: bar container
     """
 
-    fig, ax = plt.subplots(figsize=figsize)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
 
-    bar_container = plt.bar(xs, ys, width=width, align=align, color=barcolor, clip_on=False)
+    bar_container = ax.bar(xs, ys, width=width, align=align, color=bar_color, clip_on=False)
 
     if xs_line is not None and ys_line is not None:
         ax.plot(xs_line, ys_line, lw=linewidth, clip_on=False,  # alpha=alpha,
@@ -218,7 +237,7 @@ def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_ytick
 
     # add provided text notes at the given positions to the plot
     if notes is not None:
-        _add_notes(notes, ax, txt_color=barcolor, txt_fontsize=tick_fontsize)
+        _add_notes(notes, ax, txt_color=bar_color, txt_fontsize=tick_fontsize)
 
     if output_fp is not None:
         plt.savefig(output_fp, dpi=150, bbox_inches='tight', transparent=True)
@@ -270,7 +289,7 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
     :param notes: dictionary of dictionaries where the key is a tuple of x and y position of the text label and the
                   values specifies various other properties
     :param output_fp: path to pdf output file
-    :param ax: pass an axes object of an already created figure
+    :param ax: axes object of an already created figure
     :return: list of Line2D objects
     """
 
