@@ -328,6 +328,20 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
     if xticklabels is not None:
         ax.set_xticklabels(xticklabels)
 
+    if ylim is not None:
+        ax.set_ylim(ylim)
+        if n_yticks is not None:
+            if not ylog:
+                yticks = np.linspace(ylim[0], ylim[1], n_yticks)
+            else:
+                yticks = np.logspace(math.log10(ylim[0]), math.log10(ylim[1]), n_yticks)
+            ax.set_yticks(yticks, minor=True if n_yticks > 10 else False)
+    else:
+        ylim = ax.get_ylim()
+
+    if yticklabels is not None:
+        ax.set_yticklabels(yticklabels)
+
     # change given axis to scientific notation
     if sci_notation_axes is not None:
         for a in sci_notation_axes:
@@ -346,20 +360,6 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
         y_offset_text = ax.yaxis.get_offset_text().get_text()
         ax.yaxis.get_offset_text().set_visible(False)
         ax.text(y_offset_text_pos[0], y_offset_text_pos[1], y_offset_text, fontsize=TICK_FS, transform=ax.transAxes)
-
-    if ylim is not None:
-        ax.set_ylim(ylim)
-        if n_yticks is not None:
-            if not ylog:
-                yticks = np.linspace(ylim[0], ylim[1], n_yticks)
-            else:
-                yticks = np.logspace(math.log10(ylim[0]), math.log10(ylim[1]), n_yticks)
-            ax.set_yticks(yticks, minor=True if n_yticks > 10 else False)
-    else:
-        ylim = ax.get_ylim()
-
-    if yticklabels is not None:
-        ax.set_yticklabels(yticklabels)
 
     if xlabel is not None:
         ax.set_xlabel(xlabel, fontsize=lbl_fontsize)
@@ -389,6 +389,7 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
         _add_notes(notes, ax)
 
     if output_fp is not None:
+        plt.draw()
         plt.savefig(output_fp, dpi=150, bbox_inches='tight', transparent=True)
         logger.info(f'Created xy line plot: {output_fp}')
 
