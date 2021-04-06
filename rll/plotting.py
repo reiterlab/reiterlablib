@@ -20,6 +20,7 @@ LABEL_FS = 12
 TICK_FS = 11
 
 COLOR_PAL = ['dimgrey', 'firebrick', 'royalblue']
+MARKERS = ['x', '+', '2', '.']
 
 FIG_SIZE = (3.0, 2.6)
 
