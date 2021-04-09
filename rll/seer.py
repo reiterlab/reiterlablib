@@ -1,0 +1,298 @@
+#!/usr/bin/python
+"""Reading SEER data"""
+import logging
+import os
+from collections import defaultdict
+import numpy as np
+import pandas as pd
+import scipy.stats as stats
+
+from rll.convert import *
+
+__date__ = 'April 9, 2021'
+__author__ = 'Johannes REITER'
+
+# get logger
+logger = logging.getLogger(__name__)
+
+
+class Seer:
+
+    c_id = 'PatientID'
+    c_sex = 'Sex'
+    c_size_mm = 'TumorSize_mm'  # tumor size
+    c_size = 'TumorSize'  # tumor size
+    c_vol = 'TumorVolume'  # tumor size
+    c_age = 'AgeDiagnosis'  # age at diagnosis
+    c_site = 'PrimarySite'  # location of primary tumor
+    c_stage_seer = 'AJCCStage'
+    c_stage_T = 'AJCCStageT'
+    c_stage_N = 'AJCCStageN'
+    c_stage_M = 'AJCCStageM'
+    c_stage_met = 'StageEarlyLate'
+    c_stage_simpl = 'Stage'
+    c_lymmet = 'LymphaticMetastasis'
+    c_dismet = 'DistantMetastasis'
+    c_diag_month = 'DiagnosisMonth'
+    c_diag_year = 'DiagnosisYear'
+    c_survival = 'SurvivalMonths'
+    c_survival_years = 'SurvivalYears'
+    c_dead_cancerdeath = 'Alive_CancerDeath'
+    c_dead_otherdeath = 'Alive_OtherDeath'
+
+    def __init__(self, seer_root_dir, start_year, end_year):
+        """
+        Initialize SEER data object
+        :param seer_root_dir: root directory of the SEER data
+        """
+
+        self.root_dir = seer_root_dir
+        self.start_year = start_year
+        self.end_year = end_year
+
+        self.incid_dir = os.path.join(self.root_dir, 'incidence', f'yr{start_year}_{end_year}.seer9')
+        # seer_incid = os.path.join(DB_DIR, 'SEER_1975_2016_TEXTDATA', 'incidence', 'yr1975_2016.seer9')
+
+        self.crc_fp = os.path.join(self.incid_dir, 'COLRECT.TXT')
+        self.resp_fp = os.path.join(self.incid_dir, 'RESPIR.TXT')
+        self.dig_fp = os.path.join(self.incid_dir, 'DIGOTHR.TXT')
+        self.brca_fp = os.path.join(self.incid_dir, 'BREAST.TXT')
+        self.fps = [self.crc_fp, self.resp_fp, self.dig_fp, self.brca_fp]
+
+        self.fp_pop = os.path.join(self.root_dir, 'populations', 'white_black_other',
+                                   f'yr{start_year}_{end_year}.seer9', 'singleages.txt')
+
+        self.df_pop = None
+        self.df_incid = None
+        self.df_sur = None
+        logger.info(f'SEER root directory {os.path.abspath(seer_root_dir)}.')
+
+    def read_pop_data(self):
+        """
+        Read SEER population data
+        # for file format see SEER_1973_2015_TEXTDATA/populations/popdic.html
+        :return: dataframe with SEER population level data
+        """
+        colspecs = [
+            (0, 4),  # year
+            (4, 6),  # state postal abbreviation
+            (6, 8),  # state FIPS code
+            (8, 11),  # county FIPS code
+            (11, 13),  # registry
+            (13, 14),  # race
+            (14, 15),  # origin
+            (15, 16),  # sex
+            (16, 18),  # age
+            (18, 30)  # population
+        ]
+        col_names = ['year', 'state_post_abbr', 'state_fips_code', 'county_fips_code',
+                     'registry', 'race', 'origin', 'sex', 'age', 'population']
+        self.df_pop = pd.read_fwf(self.fp_pop, colspecs=colspecs, names=col_names)
+
+        # since the incidence data are only reported for years 2005-2015, remove all other data from earlier years
+        self.df_pop.drop(self.df_pop[self.df_pop['year'] < 2005].index, inplace=True)
+        assert all(2005 <= self.df_pop['year'].unique()) and all(self.df_pop['year'].unique() <= 2015)
+        self.df_pop['sex'].replace(1, 'male', inplace=True)
+        self.df_pop['sex'].replace(2, 'female', inplace=True)
+
+        return self.df_pop
+
+    def read_incidence_data(self, fn_incid=None, recency_cutoff=2005, surv_diag_years=None):
+        """
+        Read SEER incidence data
+        :param fn_incid: file name of a specific cancer types incidence file,
+                         e.g. RESPIR.TXT, DIGOTHR.TXT, COLRECT.TXT, BREAST.TXT
+        :param recency_cutoff: remove outdated data up to given year (default 2005)
+        :param surv_diag_years: tuple of years to study survival times in that interval (default None; e.g. (2006, 2009)
+        :return: dataframe with SEER incidence data
+        """
+        # ######################################################################
+        # ######### READ INCIDENCE DATA #############
+        # NOTE: positions need be shifted by one because it starts with zero
+        d = defaultdict(list)
+
+        # site codes according to International Classification of Diseases for Oncology, Third Edition (ICD-O-3)
+        # for topography codes https://seer.cancer.gov/manuals/2018/appendixc.html
+        # https://seer.cancer.gov/siterecode/icdo3_dwhoheme/index.html
+        primary_sites = {'C180': 'Colorectal', 'C181': 'Colorectal', 'C182': 'Colorectal', 'C183': 'Colorectal',
+                         'C184': 'Colorectal', 'C185': 'Colorectal', 'C186': 'Colorectal', 'C187': 'Colorectal',
+                         'C188': 'Colorectal', 'C189': 'Colorectal', 'C260': 'Colorectal',  # colon and intestine
+                         'C199': 'Colorectal', 'C209': 'Colorectal', 'C210': 'Colorectal', 'C211': 'Colorectal',
+                         'C212': 'Colorectal', 'C218': 'Colorectal',  # rectum and anus
+                         'C340': 'Lung', 'C341': 'Lung', 'C342': 'Lung', 'C343': 'Lung',
+                         'C344': 'Lung', 'C345': 'Lung', 'C346': 'Lung', 'C347': 'Lung',
+                         'C348': 'Lung', 'C349': 'Lung',  # lung and bronchus
+                         'C500': 'Breast', 'C501': 'Breast', 'C502': 'Breast', 'C503': 'Breast', 'C504': 'Breast',
+                         # breast
+                         'C505': 'Breast', 'C506': 'Breast', 'C507': 'Breast', 'C508': 'Breast', 'C509': 'Breast',
+                         'C250': 'Pancreatic', 'C251': 'Pancreatic', 'C252': 'Pancreatic', 'C253': 'Pancreatic',
+                         'C254': 'Pancreatic', 'C255': 'Pancreatic', 'C256': 'Pancreatic', 'C257': 'Pancreatic',
+                         'C258': 'Pancreatic', 'C259': 'Pancreatic',  # pancreas
+                         'C220': 'Liver',  # liver
+                         }
+
+        if fn_incid is None:
+            file_paths = self.fps
+        else:
+            file_paths = [os.path.join(self.incid_dir, fn_incid)]
+
+        for seer_fp in file_paths:
+            with open(seer_fp, 'r') as f_seer:
+                for line in f_seer:
+                    # NOTE: positions need be shifted by one because it starts with zero
+                    d[Seer.c_id].append(line[0:8])
+                    # sex/gender
+                    d[Seer.c_sex].append('male' if line[23] == '1' else 'female')
+                    # age at diagnosis
+                    d[Seer.c_age].append(line[24:27])
+                    # month and year of diagnosis
+                    d[Seer.c_diag_month].append(line[36:38])
+                    d[Seer.c_diag_year].append(line[38:42])
+                    if line[42:46] in primary_sites.keys():
+                        d[Seer.c_site].append(primary_sites[line[42:46]])
+                    else:
+                        d[Seer.c_site].append(line[42:46])
+
+                    # tumor size
+                    d[Seer.c_size_mm].append(line[95:98])
+                    # see stage formatting here: https://seer.cancer.gov/seerstat/variables/seer/ajcc-stage/3rd.html
+                    d[Seer.c_stage_T].append(line[127:129])
+                    d[Seer.c_stage_N].append(line[129:131])
+                    d[Seer.c_stage_M].append(line[131:133])  # NAACCR Item #: 2850
+                    #             d[c_stage].append(line[236:238])  # outdated (given only up to 2003)
+                    d[Seer.c_stage_seer].append(line[133:135])  # outdated (given only up to 2003)
+
+                    # survival months position 301-304
+                    d[Seer.c_survival].append(line[300:304])
+
+                    # SEER cause-specific death classification 272
+                    # 1 = dead due to cancer; 0 = alive or dead of other cause
+                    d[Seer.c_dead_cancerdeath].append(line[271])
+
+                    # SEER other cause of death classification 273
+                    # 1 = dead due to other casue; 0 = alive or dead due to cancer
+                    d[Seer.c_dead_otherdeath].append(line[272])
+
+        df_incid = pd.DataFrame(data=d)
+
+        df_incid.replace('   ', np.nan, inplace=True)
+        df_incid[Seer.c_size_mm].replace('999', np.nan, inplace=True)
+        df_incid[Seer.c_size_mm] = df_incid[Seer.c_size_mm].astype(np.float64)
+        # convert size from mm to cm
+        df_incid[Seer.c_size] = df_incid.apply(lambda row: row[Seer.c_size_mm] / 10.0, axis=1)
+        # calculate tumor volumes
+        df_incid[Seer.c_vol] = df_incid.apply(lambda row: sphere_volume(row[Seer.c_size]), axis=1)
+
+        df_incid[Seer.c_age] = df_incid[Seer.c_age].astype(np.float64)
+        df_incid[Seer.c_diag_year] = df_incid[Seer.c_diag_year].astype(np.float64)
+        # 00	Tis
+        # 88	Recode scheme not yet available
+        # 90	Unstaged
+        # 98	Not applicable
+        # 99	Error condition
+        excluding_T_stages = set(['00', '99', '01', '05', '88'])
+
+        # if lymph nodes could not be assessed assign null
+        df_incid[Seer.c_lymmet] = df_incid.apply(
+            lambda row: pd.NA if row[Seer.c_stage_N] == '99' else (False if row[Seer.c_stage_N] == '00' else True), axis=1)
+        # if distant metastases could not be assessed assign null
+        df_incid[Seer.c_dismet] = df_incid.apply(
+            lambda row: pd.NA if row[Seer.c_stage_M] == '99' else (False if row[Seer.c_stage_M] == '00' else True), axis=1)
+
+        # Simplify cancer stages
+        df_incid[Seer.c_stage_seer].replace('  ', np.nan, inplace=True)
+        df_incid = df_incid.astype({Seer.c_stage_seer: np.float64})
+
+        def simplify_seer_stage(agcc_stage_grp_code):
+            if agcc_stage_grp_code <= 2:
+                return 0
+            elif agcc_stage_grp_code < 30:
+                return 1
+            elif agcc_stage_grp_code < 50:
+                return 2
+            elif agcc_stage_grp_code < 70:
+                return 3
+            elif agcc_stage_grp_code <= 74:
+                return 4
+            else:
+                return np.nan
+
+        def simplify_seer_stage_met(agcc_stage):
+            if agcc_stage == 1 or agcc_stage == 2:
+                return 'early'
+            elif agcc_stage == 3 or agcc_stage == 4:
+                return 'late'
+            else:
+                return np.nan
+
+        df_incid[Seer.c_stage_simpl] = df_incid.apply(lambda row: simplify_seer_stage(row[Seer.c_stage_seer]), axis=1)
+        df_incid[Seer.c_stage_met] = df_incid.apply(lambda row: simplify_seer_stage_met(row[Seer.c_stage_simpl]), axis=1)
+
+        # survival months
+        df_incid[Seer.c_survival].replace('9999', np.nan, inplace=True)
+        df_incid[Seer.c_survival] = df_incid[Seer.c_survival].astype(np.float64)
+        df_incid[Seer.c_survival_years] = df_incid[Seer.c_survival] / 12
+
+        # death classification
+        df_incid[Seer.c_dead_otherdeath].replace('9', np.nan, inplace=True)
+        df_incid[Seer.c_dead_cancerdeath].replace('9', np.nan, inplace=True)
+
+        if recency_cutoff is not None:
+            self.df_incid = df_incid.drop(
+                df_incid[(df_incid[Seer.c_diag_year] < recency_cutoff)
+                         | (df_incid[Seer.c_stage_T].isin(excluding_T_stages))].index)
+            logger.info(f'Remaining entries diagnosed {recency_cutoff} or later: {len(self.df_incid)}')
+            # data_df = df.drop(df[(df[Seer.c_diag_year] < 2005) | (df.AJCCStageT.isin(excluding_stages))].index)
+            # print(f'Remaining entries with a recorded tumor size: {len(data_df[data_df.TumorSize.notnull()])}')
+        else:
+            self.df_incid = df_incid
+
+        # sort dataframe by diagnosis date such that only the first cancer is kept
+        self.df_incid.sort_values(by=[Seer.c_diag_year, Seer.c_diag_month], inplace=True)
+        self.df_incid.drop_duplicates(subset=[Seer.c_id], keep='first', inplace=True)
+        logger.info(f'Remaining entries after removing second diagnosed cancers: {len(self.df_incid)}')
+
+        if surv_diag_years is not None:
+            # filter for cancers that were diagnosed at least 6 years before the cutoff to get sufficient follow-up
+            df_sur = df_incid.drop(df_incid[(df_incid[Seer.c_diag_year] > surv_diag_years[1])
+                                            | (df_incid[Seer.c_diag_year] < surv_diag_years[0])
+                                            | (df_incid[Seer.c_stage_T].isin(excluding_T_stages))].index)
+
+            # sort dataframe by diagnosis date such that only the first cancer is kept
+            df_sur.sort_values(by=[Seer.c_diag_year, Seer.c_diag_month], inplace=True)
+            df_sur.drop_duplicates(subset=[Seer.c_id], keep='first', inplace=True)
+            logger.info('Remaining entries after removing second diagnosed cancers: {}'.format(len(df_sur)))
+            self.df_sur = df_sur
+
+        return self.df_incid, self.df_sur
+
+    def print_site_summary(self, site):
+
+        print('{} detection size [cm] mean: {:.2f} ({:.3f} cm3), median {:.2f} ({:.3f} cm3), IQR: {}-{} cm'.format(
+            site, np.nanmean(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_size]),
+            sphere_volume(np.nanmean(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_size])),
+            np.nanmedian(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_size]),
+            sphere_volume(np.nanmedian(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_size])),
+            np.nanpercentile(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_size], 25),
+            np.nanpercentile(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_size], 75)))
+
+        print('{} detection age mean: {:.2f}, median {}, IQR: {}-{} years'.format(
+            site, np.nanmean(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_age]),
+            np.nanmedian(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_age]),
+            np.nanpercentile(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_age], 25),
+            np.nanpercentile(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_age], 75)))
+
+        print('{} survival mean: {:.2f}, median {}, IQR: {}-{} months'.format(
+            site, np.nanmean(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_survival]),
+            np.nanmedian(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_survival]),
+            np.nanpercentile(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_survival], 25),
+            np.nanpercentile(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_survival], 75)))
+
+        # check correlation between tumor size and age at diagnosis
+        site_df = self.df_incid[(self.df_incid[Seer.c_site] == site)
+                           & np.isfinite(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_age])
+                           & np.isfinite(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_size])]
+        spearman = stats.spearmanr(site_df[site_df[Seer.c_site] == site][Seer.c_age],
+                                   site_df[site_df[Seer.c_site] == site][Seer.c_size])
+        print(f'{site} Spearman\'s rho correlation between age and size at diagnosis: {spearman[0]:.3f} '
+              + f'(p={spearman[1]:.3e})')
