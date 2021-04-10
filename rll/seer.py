@@ -23,6 +23,7 @@ class Seer:
     c_size_mm = 'TumorSize_mm'  # tumor size
     c_size = 'TumorSize'  # tumor size
     c_vol = 'TumorVolume'  # tumor size
+    c_cells = 'TumorVolume'  # tumor size
     c_age = 'AgeDiagnosis'  # age at diagnosis
     c_site = 'PrimarySite'  # location of primary tumor
     c_stage_seer = 'AJCCStage'
@@ -91,7 +92,7 @@ class Seer:
 
         # since the incidence data are only reported for years 2005-2015, remove all other data from earlier years
         self.df_pop.drop(self.df_pop[self.df_pop['year'] < 2005].index, inplace=True)
-        assert all(2005 <= self.df_pop['year'].unique()) and all(self.df_pop['year'].unique() <= 2015)
+        assert all(2005 <= self.df_pop['year'].unique()) and all(self.df_pop['year'].unique() <= self.end_year)
         self.df_pop['sex'].replace(1, 'male', inplace=True)
         self.df_pop['sex'].replace(2, 'female', inplace=True)
 
@@ -182,6 +183,8 @@ class Seer:
         df_incid[Seer.c_size] = df_incid.apply(lambda row: row[Seer.c_size_mm] / 10.0, axis=1)
         # calculate tumor volumes
         df_incid[Seer.c_vol] = df_incid.apply(lambda row: sphere_volume(row[Seer.c_size]), axis=1)
+        # calculate number of cells
+        df_incid[Seer.c_cells] = df_incid.apply(lambda row: diameter_cells(row[Seer.c_size]), axis=1)
 
         df_incid[Seer.c_age] = df_incid[Seer.c_age].astype(np.float64)
         df_incid[Seer.c_diag_year] = df_incid[Seer.c_diag_year].astype(np.float64)

@@ -322,7 +322,9 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
         if n_xticks is not None:
             if not xlog:
                 xticks = np.linspace(xlim[0], xlim[1], n_xticks)
-                ax.set_xticks(xticks, minor=True if n_xticks > 10 else False)
+            else:
+                xticks = np.logspace(math.log10(xlim[0]), math.log10(xlim[1]), n_xticks)
+            ax.set_xticks(xticks, minor=True if n_xticks > 10 else False)
     else:
         xlim = ax.get_xlim()
 
