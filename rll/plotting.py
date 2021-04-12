@@ -28,7 +28,7 @@ FIG_SIZE = (3.0, 2.6)
 def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=True, bin_weights=None,
                    n_bins=15, bin_borders=None, rwidth=0.9, xlabel=None, ylabel=None, title=None,
                    figsize=FIG_SIZE, align='mid', highlight_patches=None, notes=None, clip_on=False,
-                   bar_color='dimgrey', lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS, output_fp=None):
+                   bar_color='dimgrey', lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS, ax=None, output_fp=None):
     """
     Plot a histogram of the given data
     :param data: array-like data (or array of array-like data)
@@ -53,11 +53,13 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
     :param bar_color: color of bars (or array)
     :param lbl_fontsize: font size of axis labels
     :param tick_fontsize: font size of tick marks
+    :param ax: axes object of an already created figure
     :param output_fp: path to pdf output file
     :return: tuple of list of bin values and list of bin borders
     """
 
-    fig, ax = plt.subplots(figsize=figsize)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
 
     # are there multiple datasets?
     if not hasattr(data, 'values') and hasattr(data[0], '__len__'):

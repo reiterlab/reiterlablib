@@ -22,8 +22,8 @@ class Seer:
     c_sex = 'Sex'
     c_size_mm = 'TumorSize_mm'  # tumor size
     c_size = 'TumorSize'  # tumor size
-    c_vol = 'TumorVolume'  # tumor size
-    c_cells = 'TumorVolume'  # tumor size
+    c_vol = 'TumorVolume_cm3'  # tumor size
+    c_cells = 'TumorVolumeCells'  # tumor size
     c_age = 'AgeDiagnosis'  # age at diagnosis
     c_site = 'PrimarySite'  # location of primary tumor
     c_stage_seer = 'AJCCStage'
@@ -52,13 +52,29 @@ class Seer:
         self.end_year = end_year
 
         self.incid_dir = os.path.join(self.root_dir, 'incidence', f'yr{start_year}_{end_year}.seer9')
-        # seer_incid = os.path.join(DB_DIR, 'SEER_1975_2016_TEXTDATA', 'incidence', 'yr1975_2016.seer9')
+        """
+        BREAST.TXT    -  Breast
+        COLRECT.TXT   -  Colon and Rectum
+        DIGOTHR.TXT   -  Other Digestive
+        FEMGEN.TXT    -  Female Genital
+        LYMYLEUK.TXT  -  Lymphoma of All Sites and Leukemia
+        MALEGEN.TXT   -  Male Genital
+        RESPIR.TXT    -  Respiratory
+        URINARY.TXT   -  Urinary
+        OTHER.TXT     -  All Other Sites
+        """
 
         self.crc_fp = os.path.join(self.incid_dir, 'COLRECT.TXT')
         self.resp_fp = os.path.join(self.incid_dir, 'RESPIR.TXT')
         self.dig_fp = os.path.join(self.incid_dir, 'DIGOTHR.TXT')
         self.brca_fp = os.path.join(self.incid_dir, 'BREAST.TXT')
-        self.fps = [self.crc_fp, self.resp_fp, self.dig_fp, self.brca_fp]
+        self.femalegen_fp = os.path.join(self.incid_dir, 'FEMGEN.TXT')
+        self.malegen_fp = os.path.join(self.incid_dir, 'MALEGEN.TXT')
+
+        self.site_filepaths = {'Lung': self.resp_fp, 'Colorectal': self.crc_fp, 'Pancreatic': self.dig_fp,
+                               'Breast': self.brca_fp, 'Liver': self.dig_fp, 'Ovarian': self.femalegen_fp,
+                               'Prostate': self.malegen_fp}
+        self.fps = set(self.site_filepaths.values())
 
         self.fp_pop = os.path.join(self.root_dir, 'populations', 'white_black_other',
                                    f'yr{start_year}_{end_year}.seer9', 'singleages.txt')
@@ -98,11 +114,10 @@ class Seer:
 
         return self.df_pop
 
-    def read_incidence_data(self, fn_incid=None, recency_cutoff=2005, surv_diag_years=None):
+    def read_incidence_data(self, sites=None, recency_cutoff=2005, surv_diag_years=None):
         """
         Read SEER incidence data
-        :param fn_incid: file name of a specific cancer types incidence file,
-                         e.g. RESPIR.TXT, DIGOTHR.TXT, COLRECT.TXT, BREAST.TXT
+        :param sites: list of primary sites; if None, then all SEER data files are read (takes a long time)
         :param recency_cutoff: remove outdated data up to given year (default 2005)
         :param surv_diag_years: tuple of years to study survival times in that interval (default None; e.g. (2006, 2009)
         :return: dataframe with SEER incidence data
@@ -132,29 +147,36 @@ class Seer:
                          'C220': 'Liver',  # liver
                          }
 
-        if fn_incid is None:
+        if sites is None:
             file_paths = self.fps
         else:
-            file_paths = [os.path.join(self.incid_dir, fn_incid)]
+            file_paths = set([self.site_filepaths[site] for site in sites])
 
         for seer_fp in file_paths:
             with open(seer_fp, 'r') as f_seer:
                 for line in f_seer:
-                    # NOTE: positions need be shifted by one because it starts with zero
-                    d[Seer.c_id].append(line[0:8])
-                    # sex/gender
-                    d[Seer.c_sex].append('male' if line[23] == '1' else 'female')
-                    # age at diagnosis
-                    d[Seer.c_age].append(line[24:27])
-                    # month and year of diagnosis
-                    d[Seer.c_diag_month].append(line[36:38])
-                    d[Seer.c_diag_year].append(line[38:42])
+
+                    #  if a list of primary sites is given only keep those entries with any of the given primary sites
+                    if sites is not None:
+                        if line[42:46] not in primary_sites.keys() or primary_sites[line[42:46]] not in sites:
+                            continue
+
                     if line[42:46] in primary_sites.keys():
                         d[Seer.c_site].append(primary_sites[line[42:46]])
                     else:
                         d[Seer.c_site].append(line[42:46])
 
-                    # tumor size
+                    # NOTE: positions need be shifted by one because it starts with zero
+                    d[Seer.c_id].append(line[0:8])
+                    # sex/gender
+                    d[Seer.c_sex].append('male' if line[23] == '1' else 'female')
+                    # age at diagnosis in years
+                    d[Seer.c_age].append(line[24:27])
+                    # month and year of diagnosis
+                    d[Seer.c_diag_month].append(line[36:38])
+                    d[Seer.c_diag_year].append(line[38:42])
+
+                    # tumor size: Information on tumor size. Available for 2004-2015 diagnosis years.
                     d[Seer.c_size_mm].append(line[95:98])
                     # see stage formatting here: https://seer.cancer.gov/seerstat/variables/seer/ajcc-stage/3rd.html
                     d[Seer.c_stage_T].append(line[127:129])
@@ -177,8 +199,18 @@ class Seer:
         df_incid = pd.DataFrame(data=d)
 
         df_incid.replace('   ', np.nan, inplace=True)
-        df_incid[Seer.c_size_mm].replace('999', np.nan, inplace=True)
+        df_incid[Seer.c_size_mm].replace('999', np.nan, inplace=True)  # size unknown
+        df_incid[Seer.c_size_mm].replace('888', np.nan, inplace=True)  # not applicable
+        df_incid[Seer.c_size_mm].replace('000', np.nan, inplace=True)  # no primary tumor was found
+        df_incid[Seer.c_size_mm].replace('991', np.nan, inplace=True)  # described as less than 1 cm
+        df_incid[Seer.c_size_mm].replace('992', np.nan, inplace=True)  # described as less than 2 cm
+        df_incid[Seer.c_size_mm].replace('993', np.nan, inplace=True)  # described as less than 3 cm
+        df_incid[Seer.c_size_mm].replace('994', np.nan, inplace=True)  # described as less than 4 cm
+        df_incid[Seer.c_size_mm].replace('995', np.nan, inplace=True)  # described as less than 5 cm
+        for code in ['996', '997', '998']:
+            df_incid[Seer.c_size_mm].replace(code, np.nan, inplace=True)  # site-specific code needed
         df_incid[Seer.c_size_mm] = df_incid[Seer.c_size_mm].astype(np.float64)
+        df_incid[Seer.c_size_mm].replace(0.0, np.nan, inplace=True)
         # convert size from mm to cm
         df_incid[Seer.c_size] = df_incid.apply(lambda row: row[Seer.c_size_mm] / 10.0, axis=1)
         # calculate tumor volumes
@@ -197,10 +229,12 @@ class Seer:
 
         # if lymph nodes could not be assessed assign null
         df_incid[Seer.c_lymmet] = df_incid.apply(
-            lambda row: pd.NA if row[Seer.c_stage_N] == '99' else (False if row[Seer.c_stage_N] == '00' else True), axis=1)
+            lambda row: pd.NA if row[Seer.c_stage_N] == '99' else (False if row[Seer.c_stage_N] == '00' else True),
+            axis=1)
         # if distant metastases could not be assessed assign null
         df_incid[Seer.c_dismet] = df_incid.apply(
-            lambda row: pd.NA if row[Seer.c_stage_M] == '99' else (False if row[Seer.c_stage_M] == '00' else True), axis=1)
+            lambda row: pd.NA if row[Seer.c_stage_M] == '99' else (False if row[Seer.c_stage_M] == '00' else True),
+            axis=1)
 
         # Simplify cancer stages
         df_incid[Seer.c_stage_seer].replace('  ', np.nan, inplace=True)
@@ -266,6 +300,9 @@ class Seer:
             df_sur.drop_duplicates(subset=[Seer.c_id], keep='first', inplace=True)
             logger.info('Remaining entries after removing second diagnosed cancers: {}'.format(len(df_sur)))
             self.df_sur = df_sur
+
+        for site in self.df_incid[Seer.c_site].unique():
+            logger.info(f'Read {self.df_incid[self.df_incid[Seer.c_site] == site].shape[0]} cases with {site} cancer.')
 
         return self.df_incid, self.df_sur
 
