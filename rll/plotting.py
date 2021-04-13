@@ -90,7 +90,7 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
         logger.warning('Neither a desired number of bins nor a list of bin borders was given.')
 
     if bin_weights is not None:
-        # because all but the las (righthand-most) bin is half-open,
+        # because all but the last (righthand-most) bin is half-open,
         # we need to manually exclude values exactly at the right edge
         counts, bins = np.histogram(data[data < xlim[1]], bins=bin_borders)
         data = bins[:-1]

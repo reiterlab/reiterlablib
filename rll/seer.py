@@ -24,7 +24,7 @@ class Seer:
     c_size = 'TumorSize'  # tumor size
     c_vol = 'TumorVolume_cm3'  # tumor size
     c_cells = 'TumorVolumeCells'  # tumor size
-    c_age = 'AgeDiagnosis'  # age at diagnosis
+    c_age = 'AgeDiagnosis'  # age at diagnosis [years]
     c_site = 'PrimarySite'  # location of primary tumor
     c_stage_seer = 'AJCCStage'
     c_stage_T = 'AJCCStageT'
