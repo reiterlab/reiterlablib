@@ -79,7 +79,10 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
         if multiple > 0:
             weights = list()
             for i in range(multiple):
-                weights.append(np.ones_like(data[i]) / float(len(data[i])))
+                length = len(data[i]) - np.count_nonzero(np.isnan(data[i]))
+                if length != len(data[i]):
+                    logger.warning(f'Ignoring {len(data[i]) - length} NaNs for the density histogram.')
+                weights.append(np.ones_like(data[i]) / float(length))
         else:
             weights = np.ones_like(data) / float(len(data))
     else:
@@ -91,11 +94,14 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
         logger.warning('Neither a desired number of bins nor a list of bin borders was given.')
 
     if bin_weights is not None:
-        # because all but the last (righthand-most) bin is half-open,
-        # we need to manually exclude values exactly at the right edge
-        counts, bins = np.histogram(data[data < xlim[1]], bins=bin_borders)
-        data = bins[:-1]
-        weights = counts * bin_weights
+        if multiple == 0:
+            # because all but the last (righthand-most) bin is half-open,
+            # we need to manually exclude values exactly at the right edge
+            counts, bins = np.histogram(data[data < xlim[1]], bins=bin_borders)
+            data = bins[:-1]
+            weights = counts * bin_weights
+        else:
+            weights = bin_weights
 
     bin_values, bin_borders, patches = plt.hist(data, bins=bin_borders, align=align, rwidth=rwidth, clip_on=clip_on,
                                                 weights=weights, color=bar_color, alpha=alpha)

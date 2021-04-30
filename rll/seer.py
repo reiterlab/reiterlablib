@@ -38,6 +38,7 @@ class Seer:
     c_diag_year = 'DiagnosisYear'
     c_survival = 'SurvivalMonths'
     c_survival_years = 'SurvivalYears'
+    c_5year_surv = 'Survived_5years'  # boolean column encoding whether 5 years were survived (cancer-specific)
     c_dead_cancerdeath = 'Alive_CancerDeath'
     c_dead_otherdeath = 'Alive_OtherDeath'
 
@@ -268,12 +269,17 @@ class Seer:
                 return np.nan
 
         df_incid[Seer.c_stage_simpl] = df_incid.apply(lambda row: simplify_seer_stage(row[Seer.c_stage_seer]), axis=1)
-        df_incid[Seer.c_stage_met] = df_incid.apply(lambda row: simplify_seer_stage_met(row[Seer.c_stage_simpl]), axis=1)
+        df_incid[Seer.c_stage_met] = df_incid.apply(lambda row: simplify_seer_stage_met(row[Seer.c_stage_simpl]),
+                                                    axis=1)
 
         # survival months
         df_incid[Seer.c_survival].replace('9999', np.nan, inplace=True)
         df_incid[Seer.c_survival] = df_incid[Seer.c_survival].astype(np.float64)
         df_incid[Seer.c_survival_years] = df_incid[Seer.c_survival] / 12
+
+        # boolean 5 year cancer-specific survival
+        df_incid[Seer.c_5year_surv] = df_incid.apply(lambda row: np.nan if np.isnan(row[Seer.c_survival]) else
+                                                     (True if row[Seer.c_survival] >= 60 else False), axis=1)
 
         # death classification
         df_incid[Seer.c_dead_otherdeath].replace('9', np.nan, inplace=True)
@@ -320,9 +326,9 @@ class Seer:
             self.df_incid[site_filt][Seer.c_size].count(), site)
               + 'mean {:.2f} ({:.3f} cm3), median {:.2f} ({:.3f} cm3), IQR: {}-{}'.format(
             np.nanmean(self.df_incid[site_filt][Seer.c_size]),
-            sphere_volume(np.nanmean(self.df_incid[site_filt][Seer.c_size])),
+            np.nanmean(self.df_incid[site_filt][Seer.c_vol]),
             np.nanmedian(self.df_incid[site_filt][Seer.c_size]),
-            sphere_volume(np.nanmedian(self.df_incid[site_filt][Seer.c_size])),
+            np.nanmedian(self.df_incid[site_filt][Seer.c_vol]),
             np.nanpercentile(self.df_incid[site_filt][Seer.c_size], 25),
             np.nanpercentile(self.df_incid[site_filt][Seer.c_size], 75)))
 
