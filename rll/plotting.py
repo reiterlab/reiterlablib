@@ -28,7 +28,8 @@ FIG_SIZE = (3.0, 2.6)
 def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=True, bin_weights=None,
                    n_bins=15, bin_borders=None, rwidth=0.9, xlabel=None, ylabel=None, title=None,
                    figsize=FIG_SIZE, align='mid', highlight_patches=None, notes=None, clip_on=False,
-                   bar_color='dimgrey', lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS, ax=None, output_fp=None):
+                   bar_color='dimgrey', alpha=1.0, lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS,
+                   ax=None, output_fp=None):
     """
     Plot a histogram of the given data
     :param data: array-like data (or array of array-like data)
@@ -51,6 +52,7 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
                   values specifies various other properties
     :param clip_on: should lines be visible outside of the axes (default: False)
     :param bar_color: color of bars (or array)
+    :param alpha: opacity of bars
     :param lbl_fontsize: font size of axis labels
     :param tick_fontsize: font size of tick marks
     :param ax: axes object of an already created figure
@@ -73,7 +75,6 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
         yticks = np.linspace(ylim[0], ylim[1], n_yticks)
         ax.set_yticks(yticks)
 
-    alpha = 1.0
     if density:
         if multiple > 0:
             weights = list()
@@ -152,7 +153,7 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
 
 def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_yticks=None, xticks=None, align='center',
                  xlog=False, ylog=False, xlabel=None, ylabel=None, title=None, figsize=FIG_SIZE,
-                 bar_color='dimgrey', lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS, notes=None,
+                 bar_color='dimgrey', alpha=1.0, lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS, notes=None,
                  xs_line=None, ys_line=None, linewidth=1.0, linecolor='firebrick', linestyle='-',
                  ax=None, output_fp=None):
     """
@@ -173,6 +174,7 @@ def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_ytick
     :param title: plot title
     :param figsize: figure size given as a tuple
     :param bar_color: color of bars
+    :param alpha: opacity of bars
     :param lbl_fontsize: font size of axis labels
     :param tick_fontsize: font size of tick marks
     :param notes: dictionary of dictionaries where the key is a tuple of x and y position of the text label and the
@@ -190,7 +192,7 @@ def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_ytick
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
 
-    bar_container = ax.bar(xs, ys, width=width, align=align, color=bar_color, clip_on=False)
+    bar_container = ax.bar(xs, ys, width=width, align=align, color=bar_color, alpha=alpha, clip_on=False)
 
     if xs_line is not None and ys_line is not None:
         ax.plot(xs_line, ys_line, lw=linewidth, clip_on=False,  # alpha=alpha,
@@ -252,8 +254,8 @@ def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_ytick
 def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox_to_anchor=None, leg_ncol=1,
             xlog=False, ylog=False, n_xticks=None, n_yticks=None, sci_notation_axes=None, clip_on=False,
             x_offset_text_pos=None, y_offset_text_pos=None, lbl_fontsize=LABEL_FS,
-            xlabel=None, ylabel=None, title=None, labels=None, colors=None, markers=None, markersizes=None,
-            xticklabels=None, yticklabels=None, linestyles=None, linewidths=None, alpha=1.0,
+            xlabel=None, ylabel=None, title=None, labels=None, colors=None, alpha=1.0, markers=None, markersizes=None,
+            xticklabels=None, yticklabels=None, linestyles=None, linewidths=None,
             figsize=FIG_SIZE, notes=None, output_fp=None, ax=None):
     """
     Create xy line plot
@@ -281,13 +283,13 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
     :param title: plot title
     :param labels: labels for the individual lines in the legend
     :param colors: list of colors for the individual lines
+    :param alpha: transparency of lines between 0 and 1 (default 1), opacity of lines
     :param markers: list of markers for the individual lines
     :param markersizes: list of marker sizes
     :param xticklabels: list of xtick labels
     :param yticklabels: list of ytick labels
     :param linestyles: list of line styles for the individual lines (e.g., -, :-, --)
     :param linewidths: list of widths of the lines
-    :param alpha: transparency of lines between 0 and 1 (default 1)
     :param figsize: figure size given as a tuple
     :param notes: dictionary of dictionaries where the key is a tuple of x and y position of the text label and the
                   values specifies various other properties

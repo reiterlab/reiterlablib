@@ -185,8 +185,13 @@ class Seer:
                     #             d[c_stage].append(line[236:238])  # outdated (given only up to 2003)
                     d[Seer.c_stage_seer].append(line[133:135])  # outdated (given only up to 2003)
 
-                    # survival months position 301-304
-                    d[Seer.c_survival].append(line[300:304])
+                    # survival
+                    # survival months flag (305) needs to be 1 for complete date information
+                    if line[304] == '1':
+                        # survival months position 301-304
+                        d[Seer.c_survival].append(line[300:304])
+                    else:
+                        d[Seer.c_survival].append(np.nan)
 
                     # SEER cause-specific death classification 272
                     # 1 = dead due to cancer; 0 = alive or dead of other cause
@@ -254,10 +259,10 @@ class Seer:
             else:
                 return np.nan
 
-        def simplify_seer_stage_met(agcc_stage):
-            if agcc_stage == 1 or agcc_stage == 2:
+        def simplify_seer_stage_met(ajcc_stage):
+            if ajcc_stage == 1 or ajcc_stage == 2:
                 return 'early'
-            elif agcc_stage == 3 or agcc_stage == 4:
+            elif ajcc_stage == 3 or ajcc_stage == 4:
                 return 'late'
             else:
                 return np.nan
@@ -308,30 +313,41 @@ class Seer:
 
     def print_site_summary(self, site):
 
-        print('{} detection size [cm] mean: {:.2f} ({:.3f} cm3), median {:.2f} ({:.3f} cm3), IQR: {}-{} cm'.format(
-            site, np.nanmean(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_size]),
-            sphere_volume(np.nanmean(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_size])),
-            np.nanmedian(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_size]),
-            sphere_volume(np.nanmedian(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_size])),
-            np.nanpercentile(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_size], 25),
-            np.nanpercentile(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_size], 75)))
+        site_filt = self.df_incid[Seer.c_site] == site
+        cs_death_filt = self.df_sur[Seer.c_dead_otherdeath] == '0'
+
+        print('{} {} cases: detection size [cm]: '.format(
+            self.df_incid[site_filt][Seer.c_size].count(), site)
+              + 'mean {:.2f} ({:.3f} cm3), median {:.2f} ({:.3f} cm3), IQR: {}-{}'.format(
+            np.nanmean(self.df_incid[site_filt][Seer.c_size]),
+            sphere_volume(np.nanmean(self.df_incid[site_filt][Seer.c_size])),
+            np.nanmedian(self.df_incid[site_filt][Seer.c_size]),
+            sphere_volume(np.nanmedian(self.df_incid[site_filt][Seer.c_size])),
+            np.nanpercentile(self.df_incid[site_filt][Seer.c_size], 25),
+            np.nanpercentile(self.df_incid[site_filt][Seer.c_size], 75)))
 
         print('{} detection age mean: {:.2f}, median {}, IQR: {}-{} years'.format(
-            site, np.nanmean(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_age]),
-            np.nanmedian(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_age]),
-            np.nanpercentile(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_age], 25),
-            np.nanpercentile(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_age], 75)))
+            site, np.nanmean(self.df_incid[site_filt][Seer.c_age]),
+            np.nanmedian(self.df_incid[site_filt][Seer.c_age]),
+            np.nanpercentile(self.df_incid[site_filt][Seer.c_age], 25),
+            np.nanpercentile(self.df_incid[site_filt][Seer.c_age], 75)))
 
-        print('{} survival mean: {:.2f}, median {}, IQR: {}-{} months'.format(
-            site, np.nanmean(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_survival]),
-            np.nanmedian(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_survival]),
-            np.nanpercentile(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_survival], 25),
-            np.nanpercentile(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_survival], 75)))
+        if self.df_sur is not None:
+            print('{} survival mean: {:.2f}, median {}, IQR: {}-{} months'.format(
+                site, np.nanmean(self.df_sur[(self.df_sur[Seer.c_site] == site)][Seer.c_survival]),
+                np.nanmedian(self.df_sur[self.df_sur[Seer.c_site] == site][Seer.c_survival]),
+                np.nanpercentile(self.df_sur[self.df_sur[Seer.c_site] == site][Seer.c_survival], 25),
+                np.nanpercentile(self.df_sur[self.df_sur[Seer.c_site] == site][Seer.c_survival], 75)))
+
+            print('{} cancer-specific survival mean: {:.2f}, median {}, IQR: {}-{} months'.format(
+                site, np.nanmean(self.df_sur[(self.df_sur[Seer.c_site] == site) & cs_death_filt][Seer.c_survival]),
+                np.nanmedian(self.df_sur[(self.df_sur[Seer.c_site] == site) & cs_death_filt][Seer.c_survival]),
+                np.nanpercentile(self.df_sur[(self.df_sur[Seer.c_site] == site) & cs_death_filt][Seer.c_survival], 25),
+                np.nanpercentile(self.df_sur[(self.df_sur[Seer.c_site] == site) & cs_death_filt][Seer.c_survival], 75)))
 
         # check correlation between tumor size and age at diagnosis
-        site_df = self.df_incid[(self.df_incid[Seer.c_site] == site)
-                           & np.isfinite(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_age])
-                           & np.isfinite(self.df_incid[self.df_incid[Seer.c_site] == site][Seer.c_size])]
+        site_df = self.df_incid[site_filt & np.isfinite(self.df_incid[site_filt][Seer.c_age])
+                                & np.isfinite(self.df_incid[site_filt][Seer.c_size])]
         spearman = stats.spearmanr(site_df[site_df[Seer.c_site] == site][Seer.c_age],
                                    site_df[site_df[Seer.c_site] == site][Seer.c_size])
         print(f'{site} Spearman\'s rho correlation between age and size at diagnosis: {spearman[0]:.3f} '
