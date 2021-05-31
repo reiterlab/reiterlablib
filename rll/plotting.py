@@ -25,10 +25,10 @@ MARKERS = ['x', '+', '2', '.']
 FIG_SIZE = (3.0, 2.6)
 
 
-def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=True, bin_weights=None,
-                   n_bins=15, bin_borders=None, rwidth=0.9, xlabel=None, ylabel=None, title=None,
-                   figsize=FIG_SIZE, align='mid', highlight_patches=None, notes=None, clip_on=False,
-                   bar_color='dimgrey', alpha=1.0, lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS,
+def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, xticklabels=None, density=True, xlog=False,
+                   bin_weights=None, n_bins=15, bin_borders=None, rwidth=0.9, xlabel=None, ylabel=None,
+                   title=None, axes_separation=3, figsize=FIG_SIZE, align='mid', highlight_patches=None, notes=None,
+                   clip_on=False, bar_color='dimgrey', alpha=1.0, lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS,
                    ax=None, output_fp=None):
     """
     Plot a histogram of the given data
@@ -37,7 +37,9 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
     :param ylim: tuple defining limits of y-axis
     :param n_xticks: number of tick marks on the x-axis
     :param n_yticks: number of tick marks on the y-axis
+    :param xticklabels: x-axis tick labels
     :param density: if true return a probability density (default True)
+    :param xlog: have x axis in logarithmic scale
     :param bin_weights: array-like weights to normalize each bin or None (default None)
     :param n_bins: number of bins
     :param bin_borders: instead of the number of bins an array-like list of bin borders can be given (default None)
@@ -45,6 +47,7 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
     :param xlabel: label of x-axis
     :param ylabel: label of y-axis
     :param title: plot title
+    :param axes_separation: style parameter for the separation of x and y axes
     :param figsize: figure size given as a tuple
     :param align: bin alignment (default: 'mid')
     :param highlight_patches: list of bin indexes to highlight
@@ -69,12 +72,6 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
     else:
         multiple = 0
 
-    if n_yticks is not None:
-        if ylim is None:
-            ylim = ax.get_ylim()
-        yticks = np.linspace(ylim[0], ylim[1], n_yticks)
-        ax.set_yticks(yticks)
-
     if density:
         if multiple > 0:
             weights = list()
@@ -89,9 +86,44 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
         weights = None
 
     if n_bins is not None:
-        bin_borders = np.linspace(int(xlim[0]), int(xlim[1]), n_bins + 1)
+        if xlog:
+            bin_borders = np.logspace(np.log10(xlim[0]), math.log10(xlim[1]), n_bins + 1)
+        else:
+            bin_borders = np.linspace(int(xlim[0]), int(xlim[1]), n_bins + 1)
     elif bin_borders is None:
         logger.warning('Neither a desired number of bins nor a list of bin borders was given.')
+
+    if xlog:
+        ax.set_xscale('log')
+
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    else:
+        ylim = ax.get_ylim()
+
+    if n_yticks is not None:
+        if ylim is None:
+            ylim = ax.get_ylim()
+        yticks = np.linspace(ylim[0], ylim[1], n_yticks)
+        ax.set_yticks(yticks)
+
+    if xlog:
+        ax.set_xlim((bin_borders[0], bin_borders[-1]))
+    else:
+        ax.set_xlim((bin_borders[0] - (xlim[1] - xlim[0]) * 0.01, bin_borders[-1] + (xlim[1] - xlim[0]) * 0.01))
+
+    if xticklabels is not None:
+        n_xticks = len(xticklabels)
+
+    if n_xticks is not None:
+        if not xlog:
+            xticks = np.linspace(xlim[0], xlim[1], n_xticks)
+        else:
+            xticks = np.logspace(math.log10(xlim[0]), math.log10(xlim[1]), n_xticks)
+        ax.set_xticks(xticks, minor=True if n_xticks > 10 else False)
+
+    if xticklabels is not None:
+        ax.set_xticklabels(xticklabels)
 
     if bin_weights is not None:
         if multiple == 0:
@@ -114,16 +146,6 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
             logger.debug('Bin values and borders: '
                          + ', '.join(f'[{start:.2e},{end:.2e}]: {val:.1e}'
                                      for start, end, val in zip(bin_borders[:-1], bin_borders[1:], values)))
-
-    if ylim is not None:
-        ax.set_ylim(ylim)
-    else:
-        ylim = ax.get_ylim()
-
-    ax.set_xlim((bin_borders[0] - (xlim[1] - xlim[0]) * 0.01, bin_borders[-1] + (xlim[1] - xlim[0]) * 0.01))
-    if n_xticks is not None:
-        xticks = np.linspace(xlim[0], xlim[1], n_xticks)
-        ax.set_xticks(xticks)
 
     if highlight_patches is not None and len(highlight_patches) > 0:
         logger.info('Highlighting patches in histogram: '
@@ -148,7 +170,7 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, density=
     if notes is not None:
         _add_notes(notes, ax, txt_color=bar_color, txt_fontsize=tick_fontsize)
 
-    set_axis_style(ax, xlim, ylim, outward=3)
+    set_axis_style(ax, xlim, ylim, outward=axes_separation)
 
     if output_fp is not None:
         plt.savefig(output_fp, dpi=150, bbox_inches='tight', transparent=True)
