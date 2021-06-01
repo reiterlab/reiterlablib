@@ -220,7 +220,7 @@ class Seer:
         # convert size from mm to cm
         df_incid[Seer.c_size] = df_incid.apply(lambda row: row[Seer.c_size_mm] / 10.0, axis=1)
         # calculate tumor volumes
-        df_incid[Seer.c_vol] = df_incid.apply(lambda row: sphere_volume(row[Seer.c_size]), axis=1)
+        df_incid[Seer.c_vol] = df_incid.apply(lambda row: diameter_volume(row[Seer.c_size]), axis=1)
         # calculate number of cells
         df_incid[Seer.c_cells] = df_incid.apply(lambda row: diameter_cells(row[Seer.c_size]), axis=1)
 

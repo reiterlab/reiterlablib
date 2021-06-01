@@ -7,7 +7,7 @@ __date__ = 'December 21, 2020'
 __author__ = 'Johannes REITER'
 
 
-def sphere_volume(d_cm):
+def diameter_volume(d_cm):
     """
     Calculates the volume of a sphere from the given diameter
     :param d_cm: sphere diameter in centimeters
@@ -23,7 +23,7 @@ def diameter_cells(d_cm, cells_per_cm3=1e9):
     :param cells_per_cm3: number of cells per cubic centimeter (default: 1 billion cells)
     :return: number of cells
     """
-    return sphere_volume(d_cm) * cells_per_cm3
+    return diameter_volume(d_cm) * cells_per_cm3
 
 
 def cells_diameter(n_cells, cells_per_cm3=1e9):
@@ -34,6 +34,15 @@ def cells_diameter(n_cells, cells_per_cm3=1e9):
     :return: spherical diameter in centimeters
     """
     return (6 * n_cells/cells_per_cm3 / math.pi) ** (1.0/3)
+
+
+def volume_diameter(volume):
+    """
+    Takes volume in cm3 and returns approximate spherical diameter in cm
+    :param volume: tumor volume in cm3
+    :return: spherical diameter in centimeters
+    """
+    return (6 * volume / math.pi) ** (1.0/3)
 
 
 def convert_tvdt_grrate(tvdt):

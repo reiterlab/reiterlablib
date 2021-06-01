@@ -13,7 +13,7 @@ from rll.convert import *
                          [(0.0, 0.0), (0.1, 5.236e-4), (1, 0.5236)])
 def test_sphere_volume(d_cm, volume):
 
-    assert sphere_volume(d_cm) == pytest.approx(volume, rel=1e-3)
+    assert diameter_volume(d_cm) == pytest.approx(volume, rel=1e-3)
 
 
 # @pytest.mark.skip(reason='not yet implemented')

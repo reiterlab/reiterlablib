@@ -435,7 +435,7 @@ def set_axis_style(ax, xlim=None, ylim=None, outward=0):
     """
     Remove top and right axis of box around the plot
     Set end of x-axis and y-axis according to the given limits
-    :param ax:
+    :param ax: axes object of an already created figure
     :param xlim: tuple defining limits of x-axis
     :param ylim: tuple defining limits of y-axis
     :param outward: amount of space to separate left and bottom axis
@@ -460,7 +460,7 @@ def _add_notes(notes, ax, txt_color='dimgrey', txt_fontsize=10):
     Add provided text notes at the given positions to the plot
     :param notes: dictionary of dictionaries where the key is a tuple of x and y position of the text label and the
                   values specifies various other properties
-    :param ax: plot axes
+    :param ax: axes object of an already created figure
     :param txt_color: color of text
     :param txt_fontsize: text fontsize
     """
@@ -472,3 +472,47 @@ def _add_notes(notes, ax, txt_color='dimgrey', txt_fontsize=10):
             color=lbl_dict['color'] if 'color' in lbl_dict else txt_color,
             size=lbl_dict['fontsize'] if 'fontsize' in lbl_dict else txt_fontsize,
             transform=ax.transData if 'transform' in lbl_dict else ax.transAxes)
+
+
+def add_second_xaxis(ax, xlog=False, xticks=None, xticklabels=None, xlabel=None, xlabel_coords=None, axes_separation=3,
+                     output_fp=None):
+    """
+    Add a second x-axis at the top of the plot
+    :param ax: axes object of an already created figure
+    :param xlog: have x axis in logarithmic scale
+    :param xticks: locations of xticks
+    :param xticklabels: x-axis tick labels
+    :param xlabel: label of x-axis
+    :param xlabel_coords: location of xlabel
+    :param axes_separation: style parameter for the separation of x and y axes
+    :param output_fp: path to pdf output file
+    """
+    ax2 = ax.twiny()
+
+    if xlog:
+        ax2.set_xscale('log')
+
+    ax2.set_xlim(ax.get_xlim())
+
+    if xticks is not None:
+        ax2.set_xticks(xticks)
+
+    if xticklabels is not None:
+        ax2.set_xticklabels(xticklabels)
+
+    ax2.spines['left'].set_visible(False)
+    ax2.spines['right'].set_visible(False)
+    ax2.spines['bottom'].set_visible(False)
+    ax2.minorticks_off()
+    for line in ['left', 'top']:
+        ax2.spines[line].set_position(('outward', axes_separation))
+
+    if xlabel is not None:
+        ax2.set_xlabel(xlabel, fontsize=LABEL_FS)
+
+    if xlabel_coords is not None:
+        ax2.xaxis.set_label_coords(xlabel_coords[0], xlabel_coords[1])
+
+    if output_fp is not None:
+        plt.savefig(output_fp, dpi=150, bbox_inches='tight', transparent=True)
+        logger.info(f'Saved plot with second x-axis: {output_fp}')
