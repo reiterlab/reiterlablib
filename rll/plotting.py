@@ -179,27 +179,29 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, xticklab
     return bin_values, bin_borders
 
 
-def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_yticks=None, xticks=None, align='center',
-                 xlog=False, ylog=False, xlabel=None, ylabel=None, title=None, figsize=FIG_SIZE,
-                 bar_color='dimgrey', alpha=1.0, lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS, notes=None,
-                 xs_line=None, ys_line=None, linewidth=1.0, linecolor='firebrick', linestyle='-',
+def plot_barplot(xss, yss, width=0.8, xlim=None, ylim=None, n_xticks=None, n_yticks=None, xticks=None, xticklabels=None,
+                 align='center', xlog=False, ylog=False, xlabel=None, ylabel=None, title=None, axes_separation=5,
+                 figsize=FIG_SIZE, bar_color='dimgrey', alpha=1.0, lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS,
+                 notes=None, xs_line=None, ys_line=None, linewidth=1.0, linecolor='firebrick', linestyle='-',
                  ax=None, output_fp=None):
     """
-    Create a bar plot
-    :param xs: array-like list of x positions
-    :param ys: array-like list of y positions
+    Create a bar plot, if xs and ys are multiple datasets then a grouped our stacked bar plot
+    :param xss: array-like list of x positions
+    :param yss: array-like list of y positions
     :param width: with of bars
     :param xlim: tuple defining limits of x-axis
     :param ylim: tuple defining limits of y-axis
     :param n_xticks: number of tick marks on the x-axis (mutually-exclusive with xticks)
     :param n_yticks: number of tick marks on the y-axis
     :param xticks: array-like list of tick marks (mutually-exclusive with n_xticks)
+    :param xticklabels: x-axis tick labels
     :param align: bin alignment (default: 'center')
     :param xlog: have x axis in logarithmic scale
     :param ylog: have y axis in logarithmic scale
     :param xlabel: label of x-axis
     :param ylabel: label of y-axis
     :param title: plot title
+    :param axes_separation: style parameter for the separation of x and y axes
     :param figsize: figure size given as a tuple
     :param bar_color: color of bars
     :param alpha: opacity of bars
@@ -220,7 +222,21 @@ def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_ytick
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
 
-    bar_container = ax.bar(xs, ys, width=width, align=align, color=bar_color, alpha=alpha, clip_on=False)
+    if hasattr(yss[0], '__len__'):
+        bar_container = []
+        if hasattr(xss[0], '__len__'):
+            for i, (xs, ys) in enumerate(zip(xss, yss)):
+                bar_container.append(
+                    ax.bar(xs, ys, width=width, align=align, color=bar_color[i], alpha=alpha, clip_on=False))
+        else:
+            bottom = np.zeros_like(yss[0])
+            for i, ys in enumerate(yss):
+                bar_container.append(ax.bar(xss, ys, bottom=bottom,
+                                            width=width, align=align, color=bar_color[i], alpha=alpha, clip_on=False))
+                bottom += ys
+
+    else:
+        bar_container = ax.bar(xss, yss, width=width, align=align, color=bar_color, alpha=alpha, clip_on=False)
 
     if xs_line is not None and ys_line is not None:
         ax.plot(xs_line, ys_line, lw=linewidth, clip_on=False,  # alpha=alpha,
@@ -236,22 +252,31 @@ def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_ytick
     else:
         ylim = ax.get_ylim()
 
+    if xlog:
+        ax.set_xscale('log')
+    if ylog:
+        ax.set_yscale('log')
+
+    if xticklabels is not None:
+        n_xticks = len(xticklabels)
+
     if n_xticks is not None and xticks is None:
-        xticks = np.linspace(xlim[0], xlim[1], n_xticks)
+        if not xlog:
+            xticks = np.linspace(xlim[0], xlim[1], n_xticks)
+        else:
+            xticks = np.logspace(math.log10(xlim[0]), math.log10(xlim[1]), n_xticks)
         ax.set_xticks(xticks)
     elif n_xticks is None and xticks is not None:
         ax.set_xticks(xticks)
     elif n_xticks is not None and xticks is not None:
         logger.warning('Arguments n_xticks and xticks are mutually exclusive!')
 
+    if xticklabels is not None:
+        ax.set_xticklabels(xticklabels)
+
     if n_yticks is not None:
         yticks = np.linspace(ylim[0], ylim[1], n_yticks)
         ax.set_yticks(yticks)
-
-    if xlog:
-        ax.set_xscale('log')
-    if ylog:
-        ax.set_yscale('log')
 
     if title is not None:
         ax.set_title(title)
@@ -262,7 +287,7 @@ def plot_barplot(xs, ys, width=0.8, xlim=None, ylim=None, n_xticks=None, n_ytick
     if ylabel is not None:
         ax.set_ylabel(ylabel, fontsize=lbl_fontsize)
 
-    set_axis_style(ax, xlim, ylim, outward=5)
+    set_axis_style(ax, xlim, ylim, outward=axes_separation)
 
     # change the fontsize of ticks labels
     ax.tick_params(axis='both', which='major', labelsize=tick_fontsize)
