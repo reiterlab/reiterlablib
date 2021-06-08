@@ -89,7 +89,7 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, xticklab
         if xlog:
             bin_borders = np.logspace(np.log10(xlim[0]), math.log10(xlim[1]), n_bins + 1)
         else:
-            bin_borders = np.linspace(int(xlim[0]), int(xlim[1]), n_bins + 1)
+            bin_borders = np.linspace(xlim[0], xlim[1], n_bins + 1)
     elif bin_borders is None:
         logger.warning('Neither a desired number of bins nor a list of bin borders was given.')
 
