@@ -139,8 +139,9 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, xticklab
                                                 weights=weights, color=bar_color, alpha=alpha)
 
     if density and sum(bin_values) < 0.95:
-        logger.warning(f'Although density parameter is True, the sum of all bars is only {sum(bin_values)}. '
-                       + f'Potentially due to the x-axis limits or NaN values in the input data.')
+        logger.warning(
+            f'Although histogram density parameter is True, the sum of all bars is only {sum(bin_values):.3f}. '
+            + f'Potentially due to the x-axis limits or NaN values in the input data.')
 
     if multiple == 0:
         logger.debug('Bin values and borders: '
