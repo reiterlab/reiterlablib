@@ -174,7 +174,7 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, xticklab
 
     # add provided text notes at the given positions to the plot
     if notes is not None:
-        _add_notes(notes, ax, txt_color=bar_color, txt_fontsize=tick_fontsize)
+        add_notes(notes, ax, txt_color=bar_color, txt_fontsize=tick_fontsize)
 
     set_axis_style(ax, xlim, ylim, outward=axes_separation)
 
@@ -301,7 +301,7 @@ def plot_barplot(xss, yss, width=0.8, xlim=None, ylim=None, n_xticks=None, n_yti
 
     # add provided text notes at the given positions to the plot
     if notes is not None:
-        _add_notes(notes, ax, txt_color=bar_color, txt_fontsize=tick_fontsize)
+        add_notes(notes, ax, txt_color=bar_color, txt_fontsize=tick_fontsize)
 
     if output_fp is not None:
         plt.savefig(output_fp, dpi=150, bbox_inches='tight', transparent=True)
@@ -452,7 +452,7 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
 
     # add provided text notes at the given positions to the plot
     if notes is not None:
-        _add_notes(notes, ax)
+        add_notes(notes, ax)
 
     if output_fp is not None:
         plt.draw()
@@ -486,7 +486,7 @@ def set_axis_style(ax, xlim=None, ylim=None, outward=0):
         ax.spines[line].set_position(('outward', outward))
 
 
-def _add_notes(notes, ax, txt_color='dimgrey', txt_fontsize=10):
+def add_notes(notes, ax, txt_color='dimgrey', txt_fontsize=10):
     """
     Add provided text notes at the given positions to the plot
     :param notes: dictionary of dictionaries where the key is a tuple of x and y position of the text label and the
