@@ -338,6 +338,12 @@ class Seer:
             np.nanpercentile(self.df_incid[site_filt][Seer.c_age], 25),
             np.nanpercentile(self.df_incid[site_filt][Seer.c_age], 75)))
 
+        # print stage distribution
+        print(f'{site} cancer stage distribution at diagnosis: '
+              + ', '.join('{:.0%}'.format(
+                len(self.df_incid[site_filt & (self.df_incid[Seer.c_stage_simpl] == stage)])
+                / self.df_incid[site_filt][Seer.c_stage_simpl].count()) for stage in range(1, 5)))
+
         if self.df_sur is not None:
             print('{} survival mean: {:.2f}, median {}, IQR: {}-{} months'.format(
                 site, np.nanmean(self.df_sur[(self.df_sur[Seer.c_site] == site)][Seer.c_survival]),
