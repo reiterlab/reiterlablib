@@ -5,6 +5,7 @@ import logging
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import AutoMinorLocator
 
 __date__ = 'November 5, 2020'
 __author__ = 'Johannes REITER'
@@ -19,7 +20,7 @@ LABEL_FS = 12
 # default font size of tick mark labels
 TICK_FS = 11
 
-COLOR_PAL = ['dimgrey', 'firebrick', 'royalblue']
+COLOR_PAL = ['dimgrey', 'firebrick', 'navy', 'forestgreen', 'orchid', 'orange', 'rebeccapurple', 'teal', ]
 MARKERS = ['x', '+', '2', '.']
 
 FIG_SIZE = (3.0, 2.6)
@@ -314,7 +315,8 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
             xlog=False, ylog=False, n_xticks=None, n_yticks=None, sci_notation_axes=None, clip_on=False,
             x_offset_text_pos=None, y_offset_text_pos=None, lbl_fontsize=LABEL_FS,
             xlabel=None, ylabel=None, title=None, labels=None, colors=None, alpha=1.0, markers=None, markersizes=None,
-            xticklabels=None, yticklabels=None, linestyles=None, linewidths=None,
+            xticklabels=None, yticklabels=None, xticklabel_rotation=None, xminortick_freq=None,
+            linestyles=None, linewidths=None,
             figsize=FIG_SIZE, notes=None, output_fp=None, ax=None):
     """
     Create xy line plot
@@ -347,6 +349,8 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
     :param markersizes: list of marker sizes
     :param xticklabels: list of xtick labels
     :param yticklabels: list of ytick labels
+    :param xticklabel_rotation: degrees of xticklabel rotation (e.g. 45)
+    :param xminortick_freq: frequency of minor ticks on x-axis compared to major ticks
     :param linestyles: list of line styles for the individual lines (e.g., -, :-, --)
     :param linewidths: list of widths of the lines
     :param figsize: figure size given as a tuple
@@ -393,6 +397,12 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
 
     if xticklabels is not None:
         ax.set_xticklabels(xticklabels)
+
+    if xminortick_freq is not None:
+        ax.xaxis.set_minor_locator(AutoMinorLocator(xminortick_freq))
+
+    if xticklabel_rotation is not None:
+        ax.tick_params(axis='x', labelrotation=xticklabel_rotation)
 
     if ylim is not None:
         ax.set_ylim(ylim)
