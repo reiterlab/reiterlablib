@@ -229,7 +229,7 @@ def plot_barplot(xss, yss, width=0.8, xlim=None, ylim=None, n_xticks=None, n_yti
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
 
-    if hasattr(yss[0], '__len__'):
+    if not hasattr(yss, 'values') and hasattr(yss[0], '__len__'):
         bar_container = []
         if hasattr(xss[0], '__len__'):
             for i, (xs, ys) in enumerate(zip(xss, yss)):
