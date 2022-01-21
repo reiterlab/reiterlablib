@@ -187,9 +187,10 @@ def plot_histogram(data, xlim, ylim=None, n_xticks=None, n_yticks=None, xticklab
 
 
 def plot_barplot(xss, yss, width=0.8, xlim=None, ylim=None, n_xticks=None, n_yticks=None, xticks=None, xticklabels=None,
-                 align='center', xlog=False, ylog=False, xlabel=None, ylabel=None, title=None, axes_separation=5,
-                 figsize=FIG_SIZE, bar_color='dimgrey', alpha=1.0, lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS,
-                 notes=None, xs_line=None, ys_line=None, linewidth=1.0, linecolor='firebrick', linestyle='-',
+                 xticklabel_rotation=None, align='center', xlog=False, ylog=False, xlabel=None, ylabel=None, title=None,
+                 axes_separation=5, figsize=FIG_SIZE, bar_color='dimgrey', alpha=1.0,
+                 lbl_fontsize=LABEL_FS, tick_fontsize=TICK_FS, notes=None,
+                 xs_line=None, ys_line=None, linewidth=1.0, linecolor='firebrick', linestyle='-',
                  ax=None, output_fp=None):
     """
     Create a bar plot, if xs and ys are multiple datasets then a grouped our stacked bar plot
@@ -202,6 +203,7 @@ def plot_barplot(xss, yss, width=0.8, xlim=None, ylim=None, n_xticks=None, n_yti
     :param n_yticks: number of tick marks on the y-axis
     :param xticks: array-like list of tick marks (mutually-exclusive with n_xticks)
     :param xticklabels: x-axis tick labels
+    :param xticklabel_rotation: degrees of xticklabel rotation (e.g. 45)
     :param align: bin alignment (default: 'center')
     :param xlog: have x axis in logarithmic scale
     :param ylog: have y axis in logarithmic scale
@@ -264,7 +266,7 @@ def plot_barplot(xss, yss, width=0.8, xlim=None, ylim=None, n_xticks=None, n_yti
     if ylog:
         ax.set_yscale('log')
 
-    if xticklabels is not None:
+    if xticklabels is not None and xticks is None:
         n_xticks = len(xticklabels)
 
     if n_xticks is not None and xticks is None:
@@ -280,6 +282,9 @@ def plot_barplot(xss, yss, width=0.8, xlim=None, ylim=None, n_xticks=None, n_yti
 
     if xticklabels is not None:
         ax.set_xticklabels(xticklabels)
+
+    if xticklabel_rotation is not None:
+        ax.tick_params(axis='x', labelrotation=xticklabel_rotation)
 
     if n_yticks is not None:
         yticks = np.linspace(ylim[0], ylim[1], n_yticks)
