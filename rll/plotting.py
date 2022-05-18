@@ -283,9 +283,6 @@ def plot_barplot(xss, yss, width=0.8, xlim=None, ylim=None, n_xticks=None, n_yti
     if xticklabels is not None:
         ax.set_xticklabels(xticklabels)
 
-    if xticklabel_rotation is not None:
-        ax.tick_params(axis='x', labelrotation=xticklabel_rotation)
-
     if n_yticks is not None:
         yticks = np.linspace(ylim[0], ylim[1], n_yticks)
         ax.set_yticks(yticks)
@@ -300,6 +297,10 @@ def plot_barplot(xss, yss, width=0.8, xlim=None, ylim=None, n_xticks=None, n_yti
         ax.set_ylabel(ylabel, fontsize=lbl_fontsize)
 
     set_axis_style(ax, xlim, ylim, outward=axes_separation)
+
+    # needs to be set after axis style is set
+    if xticklabel_rotation is not None:
+        ax.tick_params(axis='x', labelrotation=xticklabel_rotation)
 
     # change the fontsize of ticks labels
     ax.tick_params(axis='both', which='major', labelsize=tick_fontsize)
@@ -396,7 +397,7 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
                 xticks = np.linspace(xlim[0], xlim[1], n_xticks)
             else:
                 xticks = np.logspace(math.log10(xlim[0]), math.log10(xlim[1]), n_xticks)
-            ax.set_xticks(xticks, minor=True if n_xticks > 10 else False)
+            ax.set_xticks(xticks, minor=True if (n_xticks > 10 and xticklabels is None) else False)
     else:
         xlim = ax.get_xlim()
 
@@ -405,9 +406,6 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
 
     if xminortick_freq is not None:
         ax.xaxis.set_minor_locator(AutoMinorLocator(xminortick_freq))
-
-    if xticklabel_rotation is not None:
-        ax.tick_params(axis='x', labelrotation=xticklabel_rotation)
 
     if ylim is not None:
         ax.set_ylim(ylim)
@@ -450,6 +448,10 @@ def plot_xy(xss, yss, xlim=None, ylim=None, legend=True, legend_loc='best', bbox
         ax.set_title(title, fontsize=lbl_fontsize)
 
     set_axis_style(ax, xlim, ylim, outward=5)
+
+    # needs to be set after axis style is set
+    if xticklabel_rotation is not None:
+        ax.tick_params(axis='x', labelrotation=xticklabel_rotation)
 
     plt.tick_params(axis='both', which='major', labelsize=11)
 
